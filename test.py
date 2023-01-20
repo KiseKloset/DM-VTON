@@ -1,81 +1,129 @@
-import argparse
+import os
+import time
+
+import cv2
+import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torchvision import utils
 from tqdm import tqdm
-import data_loader.data_loaders as module_data
-import model.loss as module_loss
-import model.metric as module_metric
-import model.model as module_arch
-from parse_config import ConfigParser
+
+from data.data_loader_test import CreateDataLoader
+from models.afwm_test import AFWM
+from models.rmgn_generator import RMGNGenerator
+from options.test_options import TestOptions
+from utils.utils import load_checkpoint
 
 
-def main(config):
-    logger = config.get_logger('test')
+opt = TestOptions().parse()
 
-    # setup data_loader instances
-    data_loader = getattr(module_data, config['data_loader']['type'])(
-        config['data_loader']['args']['data_dir'],
-        batch_size=512,
-        shuffle=False,
-        validation_split=0.0,
-        training=False,
-        num_workers=2
-    )
+device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
-    # build model architecture
-    model = config.init_obj('arch', module_arch)
-    logger.info(model)
+start_epoch, epoch_iter = 1, 0
 
-    # get function handles of loss and metrics
-    loss_fn = getattr(module_loss, config['loss'])
-    metric_fns = [getattr(module_metric, met) for met in config['metrics']]
+data_loader = CreateDataLoader(opt)
+dataset = data_loader.load_data()
+dataset_size = len(data_loader)
+print(dataset_size)
+#import ipdb; ipdb.set_trace()
+warp_model = AFWM(opt, 3)
+print(warp_model)
+warp_model.eval()
+warp_model.to(device)
+load_checkpoint(warp_model, opt.warp_checkpoint, device)
 
-    logger.info('Loading checkpoint: {} ...'.format(config.resume))
-    checkpoint = torch.load(config.resume)
-    state_dict = checkpoint['state_dict']
-    if config['n_gpu'] > 1:
-        model = torch.nn.DataParallel(model)
-    model.load_state_dict(state_dict)
+# gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
+gen_model = RMGNGenerator(multilevel=False, predmask=True)
+#print(gen_model)
+gen_model.eval()
+gen_model.to(device)
+load_checkpoint(gen_model, opt.gen_checkpoint, device)
 
-    # prepare model for testing
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
-    model.eval()
-
-    total_loss = 0.0
-    total_metrics = torch.zeros(len(metric_fns))
-
-    with torch.no_grad():
-        for i, (data, target) in enumerate(tqdm(data_loader)):
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-
-            #
-            # save sample images, or do something with output here
-            #
-
-            # computing loss, metrics on test set
-            loss = loss_fn(output, target)
-            batch_size = data.shape[0]
-            total_loss += loss.item() * batch_size
-            for i, metric in enumerate(metric_fns):
-                total_metrics[i] += metric(output, target) * batch_size
-
-    n_samples = len(data_loader.sampler)
-    log = {'loss': total_loss / n_samples}
-    log.update({
-        met.__name__: total_metrics[i].item() / n_samples for i, met in enumerate(metric_fns)
-    })
-    logger.info(log)
+total_steps = (start_epoch-1) * dataset_size + epoch_iter
+step = 0
+step_per_batch = dataset_size / opt.batchSize
 
 
-if __name__ == '__main__':
-    args = argparse.ArgumentParser(description='PyTorch Template')
-    args.add_argument('-c', '--config', default=None, type=str,
-                      help='config file path (default: None)')
-    args.add_argument('-r', '--resume', default=None, type=str,
-                      help='path to latest checkpoint (default: None)')
-    args.add_argument('-d', '--device', default=None, type=str,
-                      help='indices of GPUs to enable (default: all)')
+for epoch in range(1,2):
 
-    config = ConfigParser.from_args(args)
-    main(config)
+    for i, data in enumerate(tqdm(dataset), start=epoch_iter):
+        iter_start_time = time.time()
+        total_steps += opt.batchSize
+        epoch_iter += opt.batchSize
+
+        real_image = data['image']
+        clothes = data['clothes']
+        ##edge is extracted from the clothes image with the built-in function in python
+        edge = data['edge']
+        edge = torch.FloatTensor((edge.detach().numpy() > 0.5).astype(np.int64))
+        clothes = clothes * edge        
+
+        #import ipdb; ipdb.set_trace()
+
+        flow_out = warp_model(real_image.to(device), clothes.to(device))
+        warped_cloth, last_flow, = flow_out
+        warped_edge = F.grid_sample(edge.to(device), last_flow.permute(0, 2, 3, 1),
+                          mode='bilinear', padding_mode='zeros')
+
+        #gen_inputs = torch.cat([real_image.to(device), warped_cloth, warped_edge], 1)
+        gen_inputs_clothes = torch.cat([warped_cloth, warped_edge], 1)
+        gen_inputs_persons = real_image.to(device)
+        
+        gen_outputs, out_L1, out_L2, M_list = gen_model(gen_inputs_persons, gen_inputs_clothes)
+
+        p_rendered, m_composite = torch.split(gen_outputs, [3, 1], 1)
+        p_rendered = torch.tanh(p_rendered)
+        m_composite = torch.sigmoid(m_composite)
+        m_composite = m_composite * warped_edge
+        p_tryon = warped_cloth * m_composite + p_rendered * (1 - m_composite)
+
+        tryon_path = os.path.join('results/', opt.name, 'tryon')
+        warp_path = os.path.join('results/', opt.name, 'warp')
+        os.makedirs(tryon_path, exist_ok=True)
+        os.makedirs(warp_path, exist_ok=True)
+
+        #sub_path = path + '/PFAFN'
+        #os.makedirs(sub_path,exist_ok=True)
+
+        if step % 1 == 0:
+            
+            ## save try-on image only
+
+            utils.save_image(
+                p_tryon,
+                os.path.join(tryon_path, data['p_name'][0]),
+                nrow=int(1),
+                normalize=True,
+                value_range=(-1,1),
+            )
+
+            utils.save_image(
+                warped_cloth,
+                os.path.join(warp_path, data['c_name'][0]),
+                nrow=int(1),
+                normalize=True,
+                value_range=(-1,1),
+            )
+            
+            ## save person image, garment, flow, warped garment, and try-on image
+            
+            #a = real_image.float().to(device)
+            #b = clothes.to(device)
+            #flow_offset = de_offset(last_flow)
+            #flow_color = f2c(flow_offset).to(device)
+            #c= warped_cloth.to(device)
+            #d = p_tryon
+            #combine = torch.cat([a[0],b[0], flow_color, c[0], d[0]], 2).squeeze()
+            #utils.save_image(
+            #    combine,
+            #    os.path.join('./im_gar_flow_wg', data['p_name'][0]),
+            #    nrow=int(1),
+            #    normalize=True,
+            #    range=(-1,1),
+            #)
+            
+
+        step += 1
+        if epoch_iter >= dataset_size:
+            break
