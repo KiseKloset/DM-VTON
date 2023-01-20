@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+*.pth
+
 # Distribution / packaging
 .Python
 env/
