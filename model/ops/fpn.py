@@ -1,3 +1,8 @@
+'''
+Feature Pyramid Network: https://paperswithcode.com/paper/feature-pyramid-networks-for-object-detection
+Edit from: https://github.com/pytorch/vision/blob/main/torchvision/ops/feature_pyramid_network.py
+'''
+
 from typing import Callable, List, Optional
 
 import torch.nn as nn
@@ -6,7 +11,7 @@ from torch import Tensor
 from torchvision.ops.misc import Conv2dNormActivation
 
 
-# Edit from: https://github.com/pytorch/vision/blob/main/torchvision/ops/feature_pyramid_network.py
+# TODO: Try Reverse Feature Pyramid Network
 class FeaturePyramidNetwork(nn.Module):
     def __init__(
         self, 

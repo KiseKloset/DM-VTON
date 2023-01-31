@@ -1,3 +1,8 @@
+'''
+Residual block V2: https://paperswithcode.com/paper/identity-mappings-in-deep-residual-networks
+Edit from: https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
+'''
+
 from typing import Callable, Optional
 
 import torch.nn as nn
@@ -17,8 +22,6 @@ def conv3x3(in_channels: int, out_channels: int, stride: int = 1, padding: int =
     )
 
 
-# Residual block V2: https://paperswithcode.com/paper/identity-mappings-in-deep-residual-networks
-# Edit from: https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
 class ResidualBlockV2(nn.Module):
     def __init__(
         self, 
