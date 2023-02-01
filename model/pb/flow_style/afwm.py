@@ -84,6 +84,7 @@ class FeatureEncoder(nn.Module):
 
 
 # TODO: Check B is batchsize (forward)
+# TODO: Check edge == None
 # Class Appearance Flow Estimation Network
 class AFEN(nn.Module):
     def __init__(
@@ -262,7 +263,12 @@ class AFWM(nn.Module):
         # self.old_lr = opt.lr
         # self.old_lr_warp = opt.lr*0.2
 
-    def forward(self, cond_input, image_input, image_edge=None):
+    def forward(
+        self, 
+        cond_input: Tensor, 
+        image_input: Tensor, 
+        image_edge: Tensor,
+    ) -> Tuple:
         cond_pyramids = self.cond_FPN(self.cond_features(cond_input))
         image_pyramids = self.image_FPN(self.image_features(image_input))
 
