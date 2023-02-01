@@ -14,6 +14,12 @@ import torch.nn.functional as F
 from torch import Tensor
 
 
+def get_act_layer(act_type: str = 'relu') -> nn.Module:
+    if act_type=='relu':
+        return nn.ReLU(True)
+    elif act_type=='lrelu':
+        return nn.LeakyReLU(0.2, True)
+
 # TODO: Try StyleGAN2
 class EqualLR:
     def __init__(self, name: str) -> None:
@@ -182,7 +188,7 @@ class StyledConvBlock(nn.Module):
         super().__init__()
         if padding_layer is None:
             padding_layer = nn.ZeroPad2d
-        self.act = self.get_act_layer(act)
+        self.act = get_act_layer(act)
         self.act_gain = math.sqrt(2) if modulated_conv else 1.0
         self.modulated_conv = modulated_conv
         
@@ -215,12 +221,6 @@ class StyledConvBlock(nn.Module):
                             padding_layer(1), 
                             EqualConv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3),
                         )
-
-    def get_act_layer(act_type: str = 'relu') -> nn.Module:
-        if act_type=='relu':
-            return nn.ReLU(True)
-        elif act_type=='lrelu':
-            return nn.LeakyReLU(0.2, True)
             
     def forward(self, input: Tensor, style: Tensor = None) -> Tensor:
         if self.modulated_conv:
@@ -239,7 +239,7 @@ class StyledConvBlock(nn.Module):
 
 # Add middle dim of two conv (128) and disable last activation layer
 # TODO: Check this class's effect
-class StyledConvBlock(nn.Module):
+class StyledFConvBlock(nn.Module):
     def __init__(
         self, 
         in_channels: int, 
@@ -254,7 +254,7 @@ class StyledConvBlock(nn.Module):
         super().__init__()
         if padding_layer is None:
             padding_layer = nn.ZeroPad2d
-        self.act = self.get_act_layer(act)
+        self.act = get_act_layer(act)
         self.act_gain = math.sqrt(2) if modulated_conv else 1.0
         self.modulated_conv = modulated_conv
         
@@ -287,12 +287,6 @@ class StyledConvBlock(nn.Module):
                             padding_layer(1), 
                             EqualConv2d(in_channels=128, out_channels=out_channels, kernel_size=3),
                         )
-    
-    def get_act_layer(act_type: str = 'relu') -> nn.Module:
-        if act_type=='relu':
-            return nn.ReLU(True)
-        elif act_type=='lrelu':
-            return nn.LeakyReLU(0.2, True)
     
     def forward(self, input: Tensor, style: Tensor = None) -> Tensor:
         if self.modulated_conv:

@@ -16,7 +16,7 @@ class FeaturePyramidNetwork(nn.Module):
     def __init__(
         self, 
         in_channels_list: List[int], 
-        out_channels: int = 256,
+        out_channels,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
