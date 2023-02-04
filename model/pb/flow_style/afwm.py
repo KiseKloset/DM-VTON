@@ -13,6 +13,7 @@ ROOT = FILE.parents[3]  # root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
+from base.base_model import BaseModel
 from model.ops.fpn import FeaturePyramidNetwork
 from model.ops.resnet import ResidualBlockV2
 from model.pb.flow_style.style import StyledFConvBlock, StyledConvBlock
@@ -69,8 +70,8 @@ class FeatureEncoder(nn.Module):
         for i in range(len(self.out_channels_list) - 1):
             encoder = nn.Sequential(
                         DownSample(self.out_channels_list[i], self.out_channels_list[i+1]),
-                        ResidualBlockV2(self.out_channels_list[i+1]),
-                        ResidualBlockV2(self.out_channels_list[i+1])
+                        ResidualBlockV2(self.out_channels_list[i+1], self.out_channels_list[i+1]),
+                        ResidualBlockV2(self.out_channels_list[i+1], self.out_channels_list[i+1])
                     )
             
             self.encoders.append(encoder)
@@ -248,18 +249,18 @@ class AFEN(nn.Module):
 
 # TODO: Check lr
 # Class Appearance Flow Warping Module 
-class AFWM(nn.Module):
+class AFWM(BaseModel):
     def __init__(
         self, 
         cond_in_channels: int,
-        num_filters: List[int] = [64, 128, 256, 256, 256],
+        filters: List[int] = [64, 128, 256, 256, 256],
     ) -> None:
         super().__init__()
-        self.image_features = FeatureEncoder(in_channels=3, out_channels_list=num_filters) 
-        self.cond_features = FeatureEncoder(in_channels=cond_in_channels, out_channels_list=num_filters)
-        self.image_FPN = FeaturePyramidNetwork(num_filters)
-        self.cond_FPN = FeaturePyramidNetwork(num_filters)
-        self.aflow_net = AFEN(len(num_filters))
+        self.image_features = FeatureEncoder(in_channels=3, out_channels_list=filters) 
+        self.cond_features = FeatureEncoder(in_channels=cond_in_channels, out_channels_list=filters)
+        self.image_FPN = FeaturePyramidNetwork(in_channels_list=filters, out_channels=256)
+        self.cond_FPN = FeaturePyramidNetwork(in_channels_list=filters, out_channels=256)
+        self.aflow_net = AFEN(len(filters))
         # self.old_lr = opt.lr
         # self.old_lr_warp = opt.lr*0.2
 
@@ -295,4 +296,3 @@ class AFWM(nn.Module):
     #     if opt.verbose:
     #         print('update learning rate: %f -> %f' % (self.old_lr_warp, lr))
     #     self.old_lr_warp = lr
-

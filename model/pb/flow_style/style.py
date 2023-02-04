@@ -6,6 +6,8 @@ https://github.com/InterDigitalInc/FeatureStyleEncoder/blob/main/pixel2style2pix
 '''
 
 import math
+import sys
+from pathlib import Path
 from typing import Callable, Optional
 
 import torch
@@ -13,12 +15,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[3]  # root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
-def get_act_layer(act_type: str = 'relu') -> nn.Module:
-    if act_type=='relu':
-        return nn.ReLU(True)
-    elif act_type=='lrelu':
-        return nn.LeakyReLU(0.2, True)
+from utils.torch_utils import get_act_layer
+
 
 # TODO: Try StyleGAN2
 class EqualLR:
