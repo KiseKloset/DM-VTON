@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 from base.base_model import BaseModel
 from model.ops.fpn import FeaturePyramidNetwork
 from model.ops.resnet import ResidualBlockV2
-from model.pb.flow_style.style import StyledFConvBlock, StyledConvBlock
+from model.ops.style import StyledFConvBlock, StyledConvBlock
 
 
 def apply_offset(offset) -> Tensor:
