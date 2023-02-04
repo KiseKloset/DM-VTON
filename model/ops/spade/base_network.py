@@ -1,6 +1,8 @@
 """
 Copyright (C) 2019 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
+Base network of SPADE: https://paperswithcode.com/method/spade  
+Edit from https://github.com/NVlabs/SPADE/blob/master/models/networks/base_network.py
 """
 
 import torch.nn as nn
@@ -9,13 +11,12 @@ from torch.nn import init
 
 class BaseNetwork(nn.Module):
     def __init__(self):
-        super(BaseNetwork, self).__init__()
+        super().__init__()
 
     def init_weights(self, init_type='xavier', gain=0.02):
         def init_func(m):
             classname = m.__class__.__name__
             if classname.find('BatchNorm2d') != -1:
-                print('!!!!!!!!!!!! Found BN !!!!!!!!!!!!!!!!')
                 if hasattr(m, 'weight') and m.weight is not None:
                     init.normal_(m.weight.data, 1.0, gain)
                 if hasattr(m, 'bias') and m.bias is not None:
@@ -41,3 +42,6 @@ class BaseNetwork(nn.Module):
         self.apply(init_func)
 
         # propagate to children
+        for m in self.children():
+            if hasattr(m, 'init_weights'):
+                m.init_weights(init_type, gain)
