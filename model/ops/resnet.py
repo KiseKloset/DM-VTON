@@ -22,7 +22,7 @@ def conv3x3(in_channels: int, out_channels: int, stride: int = 1, padding: int =
     )
 
 
-class ResidualBlockV2(nn.Module):
+class ResidualBlock(nn.Module):
     def __init__(
         self, 
         in_channels: int, 
@@ -33,11 +33,43 @@ class ResidualBlockV2(nn.Module):
         super().__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
+
+        self.conv1 = conv3x3(in_channels, out_channels, stride)
         self.bn1 = norm_layer(in_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.conv1 = conv3x3(in_channels, out_channels, stride)
-        self.bn2 = norm_layer(out_channels)
         self.conv2 = conv3x3(out_channels, out_channels)
+        self.bn2 = norm_layer(out_channels)
+        
+    def forward(self, x: Tensor) -> Tensor:
+        identity = x
+        
+        out = self.conv1(out)
+        out = self.bn1(x)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        
+        out += identity
+        out = self.relu(out)
+
+        return out
+
+
+class ResidualBlockV2(ResidualBlock):
+    def __init__(
+        self, 
+        in_channels: int, 
+        out_channels: int, 
+        stride: int = 1,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ) -> None:
+        super().__init__(
+            in_channels, 
+            out_channels, 
+            stride,
+            norm_layer,
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         identity = x
