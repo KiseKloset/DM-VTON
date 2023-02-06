@@ -1,7 +1,7 @@
-'''
+"""
 Residual UNet Skip Connection
 Edit from: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/models/networks.py
-'''
+"""
 
 import sys
 from pathlib import Path
@@ -16,7 +16,7 @@ ROOT = FILE.parents[2]  # root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
-from model.ops.resnet import ResidualBlock
+from model.common.resnet import ResidualBlock
 
 
 """
@@ -108,7 +108,9 @@ class ResUnetSkipConnectionBlock(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self.outermost:
-            return self.model(x)
+            out = self.model(x)
         else:
             # Concatenate
-            return torch.cat([x, self.model(x)], 1)
+            out = torch.cat([x, self.model(x)], 1)
+            
+        return out

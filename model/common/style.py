@@ -1,9 +1,9 @@
-'''
+"""
 StyleGan
 Edit from: 
 https://github.com/rosinality/progressive-gan-pytorch/blob/master/model.py
 https://github.com/InterDigitalInc/FeatureStyleEncoder/blob/main/pixel2style2pixel/models/stylegan2/model.py
-'''
+"""
 
 import math
 import sys
@@ -20,7 +20,6 @@ ROOT = FILE.parents[3]  # root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
-from utils.torch_utils import get_act_layer
 
 
 # TODO: Try StyleGAN2
@@ -186,12 +185,14 @@ class StyledConvBlock(nn.Module):
         modulated_conv: bool = False,
         demodulate: bool = True,
         norm_affine_output: bool = False, 
-        act: str = 'lrelu',
+        act_layer: str = 'lrelu',
     ) -> None:
         super().__init__()
         if padding_layer is None:
             padding_layer = nn.ZeroPad2d
-        self.act = get_act_layer(act)
+        if act_layer is None:    
+            act_layer = nn.LeakyReLU(0.2, True)
+        self.act = act_layer
         self.act_gain = math.sqrt(2) if modulated_conv else 1.0
         self.modulated_conv = modulated_conv
         
@@ -220,21 +221,21 @@ class StyledConvBlock(nn.Module):
                             padding_layer(1), 
                             EqualConv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3),
                         )
-            self.conv1 = nn.Sequential(
+            self.conv2 = nn.Sequential(
                             padding_layer(1), 
                             EqualConv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3),
                         )
             
     def forward(self, input: Tensor, style: Tensor = None) -> Tensor:
         if self.modulated_conv:
-            out = self.conv0(input, style)
+            out = self.conv1(input, style)
             out = self.act(out) * self.act_gain
-            self.conv1(out, style)
+            self.conv2(out, style)
             out = self.act(out) * self.act_gain
         else:
-            out = self.conv0(input)
+            out = self.conv1(input)
             out = self.act(out) * self.act_gain
-            self.conv1(out)
+            self.conv2(out)
             out = self.act(out) * self.act_gain
 
         return out
@@ -252,12 +253,14 @@ class StyledFConvBlock(nn.Module):
         modulated_conv: bool = False,
         demodulate: bool = True,
         norm_affine_output: bool = False, 
-        act: str = 'lrelu',
+        act_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
         if padding_layer is None:
             padding_layer = nn.ZeroPad2d
-        self.act = get_act_layer(act)
+        if act_layer is None:
+            act_layer = nn.LeakyReLU(0.2, True)
+        self.act = act_layer
         self.act_gain = math.sqrt(2) if modulated_conv else 1.0
         self.modulated_conv = modulated_conv
         
@@ -286,20 +289,20 @@ class StyledFConvBlock(nn.Module):
                             padding_layer(1), 
                             EqualConv2d(in_channels=in_channels, out_channels=128, kernel_size=3),
                         )
-            self.conv1 = nn.Sequential(
+            self.conv2 = nn.Sequential(
                             padding_layer(1), 
                             EqualConv2d(in_channels=128, out_channels=out_channels, kernel_size=3),
                         )
     
     def forward(self, input: Tensor, style: Tensor = None) -> Tensor:
         if self.modulated_conv:
-            out = self.conv0(input, style)
+            out = self.conv1(input, style)
             out = self.act(out) * self.act_gain
-            self.conv1(out, style)
+            self.conv2(out, style)
         else:
-            out = self.conv0(input)
+            out = self.conv1(input)
             out = self.act(out) * self.act_gain
-            self.conv1(out)
+            self.conv2(out)
 
         return out
     

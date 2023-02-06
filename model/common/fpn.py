@@ -1,9 +1,9 @@
-'''
+"""
 Feature Pyramid Network: https://paperswithcode.com/paper/feature-pyramid-networks-for-object-detection
 Edit from: https://github.com/pytorch/vision/blob/main/torchvision/ops/feature_pyramid_network.py
-'''
+"""
 
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,7 +15,7 @@ from torchvision.ops.misc import Conv2dNormActivation
 class FeaturePyramidNetwork(nn.Module):
     def __init__(
         self, 
-        in_channels_list: List[int], 
+        in_channels_list: list[int], 
         out_channels: int,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
@@ -41,7 +41,7 @@ class FeaturePyramidNetwork(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-    def forward(self, x: List[Tensor]) -> List[Tensor]:
+    def forward(self, x: list[Tensor]) -> list[Tensor]:
         last_inner = self.inner_blocks[-1](x[-1], -1)
         out = []
         out.append(self.layer_blocks[-1](last_inner))

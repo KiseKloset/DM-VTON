@@ -1,7 +1,7 @@
-'''
+"""
 Residual block V2: https://paperswithcode.com/paper/identity-mappings-in-deep-residual-networks
 Edit from: https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
-'''
+"""
 
 from typing import Callable, Optional
 
@@ -10,14 +10,20 @@ from torch import Tensor
 
 
 # 3x3 convolution
-def conv3x3(in_channels: int, out_channels: int, stride: int = 1, padding: int = 1) -> nn.Conv2d:
-    """3x3 convolution with padding"""
+def conv3x3(
+    in_channels: int, 
+    out_channels: int, 
+    stride: int = 1, 
+    padding: int = 1, 
+    dilation: int = 1,
+) -> nn.Conv2d:
     return nn.Conv2d(
         in_channels,
         out_channels,
         kernel_size=3,
         stride=stride,
         padding=padding,
+        dilation=dilation,
         bias=False,
     )
 
