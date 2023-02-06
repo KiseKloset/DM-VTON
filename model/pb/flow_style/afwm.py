@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional
 
 import numpy as np
 import torch
@@ -14,9 +14,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from base.base_model import BaseModel
-from model.ops.fpn import FeaturePyramidNetwork
-from model.ops.resnet import ResidualBlockV2
-from model.ops.style import StyledFConvBlock, StyledConvBlock
+from model.common.fpn import FeaturePyramidNetwork
+from model.common.resnet import ResidualBlockV2
+from model.common.style import StyledFConvBlock, StyledConvBlock
 
 
 def apply_offset(offset) -> Tensor:
@@ -61,7 +61,7 @@ class FeatureEncoder(nn.Module):
     def __init__(
         self, 
         in_channels: int, 
-        out_channels_list: List[int],
+        out_channels_list: list[int],
     ) -> None:
         # in_channels = 3 for images, and is larger (e.g., 17+1+1) for agnositc representation
         super().__init__()
@@ -76,7 +76,7 @@ class FeatureEncoder(nn.Module):
             
             self.encoders.append(encoder)
 
-    def forward(self, x: Tensor) -> List[Tensor]:
+    def forward(self, x: Tensor) -> list[Tensor]:
         out = []
         for encoder in self.encoders:
             out.append(encoder(x))
@@ -180,10 +180,10 @@ class AFEN(nn.Module):
         self, 
         x: Tensor, 
         x_edge: Tensor, 
-        x_warps: List[Tensor], 
-        x_conds: List[Tensor], 
+        x_warps: list[Tensor], 
+        x_conds: list[Tensor], 
         warp_feature=True
-    ) -> Tuple:
+    ) -> tuple:
         last_flow, last_flow_all = None, []
         x_all, x_edge_all, delta_list, delta_x_all, delta_y_all, cond_fea_all = [], [], [], [], [], []
 
@@ -253,7 +253,7 @@ class AFWM(BaseModel):
     def __init__(
         self, 
         cond_in_channels: int,
-        filters: List[int] = [64, 128, 256, 256, 256],
+        filters: list[int] = [64, 128, 256, 256, 256],
     ) -> None:
         super().__init__()
         self.image_features = FeatureEncoder(in_channels=3, out_channels_list=filters) 
@@ -269,7 +269,7 @@ class AFWM(BaseModel):
         cond_input: Tensor, 
         image_input: Tensor, 
         image_edge: Tensor,
-    ) -> Tuple:
+    ) -> tuple:
         cond_pyramids = self.cond_FPN(self.cond_features(cond_input))
         image_pyramids = self.image_FPN(self.image_features(image_input))
 
