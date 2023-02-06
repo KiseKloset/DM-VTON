@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 import torch.nn as nn
 from torch import Tensor
@@ -10,7 +10,7 @@ ROOT = FILE.parents[3]  # root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
-from model.ops.resunet import ResUnetSkipConnectionBlock
+from model.common.resunet import ResUnetSkipConnectionBlock
 
 
 class ResUnetGenerator(nn.Module):
@@ -18,7 +18,7 @@ class ResUnetGenerator(nn.Module):
         in_channels: int, 
         out_channels: int, 
         num_downs: int, 
-        filters: List[int] = [64, 128, 256, 512],
+        filters: list[int] = [64, 128, 256, 512],
         use_dropout: bool = False,
         norm_layer: Optional[Callable[..., nn.Module]] = None, 
     ) -> None:
@@ -28,7 +28,7 @@ class ResUnetGenerator(nn.Module):
             out_channels (int)  -- the number of channels in output images
             num_downs (int)     -- the number of downsamplings in UNet. For example, # if |num_downs| == 7,
                                     image of size 128x128 will become of size 1x1 # at the bottleneck
-            filters (List[int]) -- the filters list of conv layers
+            filters (list[int]) -- the filters list of conv layers
             norm_layer          -- normalization layer
         We construct the U-Net from the innermost layer to the outermost layer.
         It is a recursive process.
