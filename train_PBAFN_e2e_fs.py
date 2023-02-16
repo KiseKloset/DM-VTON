@@ -86,6 +86,7 @@ step_per_batch = dataset_size
 if opt.local_rank == 0:
     writer = SummaryWriter(path)
 
+all_steps = dataset_size * (opt.niter + opt.niter_decay + 1 - start_epoch)
 for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     epoch_start_time = time.time()
     if epoch != start_epoch:
@@ -229,7 +230,12 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         if step % 100 == 0:
           if opt.local_rank == 0:
-            print('{}:{}:[step-{}]--[loss-{:.6f}]--[loss-{:.6f}]--[ETA-{}]'.format(now, epoch_iter, step, warp_loss, gen_loss, eta))
+            print('{}:{}:[step-{}/{}: {:.2%}]--[loss-{:.6f}: wl-{:.6f}, gl-{:.6f}]--[lr-{:.6f}]--[ETA-{}]'
+                    .format(now, epoch_iter,
+                            step, all_steps, step/all_steps, 
+                            loss_all, warp_loss, gen_loss, 
+                            model.module.old_lr, eta)
+                )
 
         if epoch_iter >= dataset_size:
             break

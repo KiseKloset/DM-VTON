@@ -3,7 +3,7 @@ train_PBAFN_stage1_fs.py --name PBAFN_stage1_fs \
 --gpu_ids 0 \
 --launcher pytorch --resize_or_crop None \
 --batchSize 32 --label_nc 14  \
---niter 1 --niter_decay 1 --save_epoch_freq 10 \
---dataroot ../../dataset/Flow-Style-VTON/VITON_traindata \
+--niter 50 --niter_decay 150 --save_epoch_freq 5 \
+--dataroot ../dataset/Flow-Style-VTON/VITON_traindata \
 --checkpoints_dir checkpoints_fs \
 &>> ./output/train_PBAFN_stage1_fs.txt

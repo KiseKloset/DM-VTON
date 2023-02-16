@@ -1,9 +1,9 @@
 ------------ Options -------------
-PBAFN_gen_checkpoint: None
-PBAFN_warp_checkpoint: None
+PBAFN_gen_checkpoint: checkpoints_fs/PBAFN_e2e_fs/PBAFN_gen_epoch_201.pth
+PBAFN_warp_checkpoint: checkpoints_fs/PBAFN_e2e_fs/PBAFN_warp_epoch_201.pth
 PFAFN_gen_checkpoint: None
-PFAFN_warp_checkpoint: None
-batchSize: 32
+PFAFN_warp_checkpoint: checkpoints_fs/PFAFN_stage1_fs/PFAFN_warp_epoch_201.pth
+batchSize: 16
 beta1: 0.5
 checkpoints_dir: checkpoints_fs
 continue_train: False
@@ -30,7 +30,7 @@ n_blocks_local: 3
 n_downsample_global: 4
 n_layers_D: 3
 n_local_enhancers: 1
-name: PBAFN_stage1_fs
+name: PFAFN_e2e
 ndf: 64
 netG: global
 ngf: 64

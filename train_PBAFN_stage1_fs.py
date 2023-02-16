@@ -45,7 +45,7 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-train_data = CreateDataset(opt)
+train_data = CreateDataset(opt) 
 train_sampler = DistributedSampler(train_data)
 train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
                                                num_workers=4, pin_memory=True, sampler=train_sampler)
@@ -172,9 +172,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         now = time_stamp.strftime('%Y.%m.%d-%H:%M:%S')
         if step % 100 == 0:
           if opt.local_rank == 0:
-            print('{}:{}:[step-{}/{}: {:.2%}]--[loss-{:.6f}]--[ETA-{}]'.format(now, epoch_iter,
+            print('{}:{}:[step-{}/{}: {:.2%}]--[loss-{:.6f}]--[lr-{:.6f}]--[ETA-{}]'.format(now, epoch_iter,
                                                                                step, all_steps, step/all_steps, 
-                                                                               loss_all, eta))
+                                                                               loss_all, model.module.old_lr, eta))
 
         if epoch_iter >= dataset_size:
             break

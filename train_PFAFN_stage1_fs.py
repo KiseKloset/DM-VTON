@@ -101,6 +101,7 @@ if opt.local_rank == 0:
 step = 0
 step_per_batch = dataset_size
 
+all_steps = dataset_size * (opt.niter + opt.niter_decay + 1 - start_epoch)
 for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     epoch_start_time = time.time()
     if epoch != start_epoch:
@@ -263,7 +264,11 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         now = time_stamp.strftime('%Y.%m.%d-%H:%M:%S')
         if step % 100 == 0:
             if opt.local_rank == 0:
-                print('{}:{}:[step-{}]--[loss-{:.6f}]--[loss-{:.6f}]--[loss-{:.6f}]--[ETA-{}]'.format(now, epoch_iter, step, loss_all, loss_fea_sup_all, loss_flow_sup_all, eta))
+                print('{}:{}:[step-{}/{}: {:.2%}]--[loss-{:.6f}]--[loss-{:.6f}]--[loss-{:.6f}]--[lrpf-{:.6f}]--[ETA-{}]'.format(
+                                                                               now, epoch_iter,
+                                                                               step, all_steps, step/all_steps, 
+                                                                               loss_all, loss_fea_sup_all, loss_flow_sup_all, 
+                                                                               PPF_warp_model.module.old_lr, eta))
 
         if epoch_iter >= dataset_size:
             break
