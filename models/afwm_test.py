@@ -430,7 +430,7 @@ class AFlowNet(nn.Module):
 
               if last_flow is not None and warp_feature:
                   x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
-                       mode='bilinear', padding_mode='border', align_corners=True, align_corners=True)
+                       mode='bilinear', padding_mode='border', align_corners=True)
               else:
                   x_warp_after = x_warp
 
