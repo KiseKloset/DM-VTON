@@ -123,7 +123,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
 class Vgg19(nn.Module):
     def __init__(self, requires_grad=False):
         super(Vgg19, self).__init__()
-        vgg_pretrained_features = models.vgg19(pretrained=True).features
+        vgg_pretrained_features = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features
         # for torchvision >= 0.4.0 or torch >= 1.2.0
         for x in vgg_pretrained_features.modules():
             if isinstance(x, nn.MaxPool2d) or isinstance(x, nn.AdaptiveAvgPool2d):
