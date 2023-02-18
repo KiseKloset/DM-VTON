@@ -29,6 +29,7 @@ class BaseOptions():
 
         # for setting inputs
         self.parser.add_argument('--dataroot', type=str,default='dataset/VITON_traindata/')
+        self.parser.add_argument('--valroot', type=str,default='dataset/VITON_valdata/')
         self.parser.add_argument('--resize_or_crop', type=str, default='scale_width', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')        
         self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation') 

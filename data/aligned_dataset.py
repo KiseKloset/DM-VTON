@@ -11,14 +11,15 @@ import random
 
 
 class AlignedDataset(BaseDataset):
-    def initialize(self, opt):
+    def initialize(self, opt, val=False):
         self.opt = opt
-        self.root = opt.dataroot    
+        self.root = opt.dataroot if not val else opt.valroot
+        self.phase = opt.phase if not val else 'val'
         self.diction={}
 
         if opt.isTrain or opt.use_encoded_image:
             dir_A = '_A' if self.opt.label_nc == 0 else '_label'
-            self.dir_A = os.path.join(opt.dataroot, opt.phase + dir_A)
+            self.dir_A = os.path.join(self.root, self.phase + dir_A)
             self.A_paths = sorted(make_dataset(self.dir_A))
 
         self.fine_height=256
@@ -26,19 +27,19 @@ class AlignedDataset(BaseDataset):
         self.radius=5
 
         dir_B = '_B' if self.opt.label_nc == 0 else '_img'
-        self.dir_B = os.path.join(opt.dataroot, opt.phase + dir_B)  
+        self.dir_B = os.path.join(self.root, self.phase + dir_B)  
         self.B_paths = sorted(make_dataset(self.dir_B))
 
         self.dataset_size = len(self.A_paths)
 
         if opt.isTrain or opt.use_encoded_image:
             dir_E = '_edge'
-            self.dir_E = os.path.join(opt.dataroot, opt.phase + dir_E)
+            self.dir_E = os.path.join(self.root, self.phase + dir_E)
             self.E_paths = sorted(make_dataset(self.dir_E))
 
         if opt.isTrain or opt.use_encoded_image:
             dir_C = '_color'
-            self.dir_C = os.path.join(opt.dataroot, opt.phase + dir_C)
+            self.dir_C = os.path.join(self.root, self.phase + dir_C)
             self.C_paths = sorted(make_dataset(self.dir_C))
 
 
@@ -68,7 +69,7 @@ class AlignedDataset(BaseDataset):
         E = Image.open(E_path).convert('L')
         E_tensor = transform_A(E)
 
-        index_un = np.random.randint(14221)
+        index_un = np.random.randint(len(self.A_paths))
         C_un_path = self.C_paths[index_un]
         C_un = Image.open(C_un_path).convert('RGB')
         C_un_tensor = transform_B(C_un)
@@ -77,7 +78,7 @@ class AlignedDataset(BaseDataset):
         E_un = Image.open(E_un_path).convert('L')
         E_un_tensor = transform_A(E_un)
 
-        pose_name =B_path.replace('.png', '_keypoints.json').replace('.jpg','_keypoints.json').replace('train_img','train_pose')
+        pose_name =B_path.replace('.png', '_keypoints.json').replace('.jpg','_keypoints.json').replace(f'{self.phase}_img',f'{self.phase}_pose')
         with open(osp.join(pose_name), 'r') as f:
             pose_label = json.load(f)
             try:
@@ -104,7 +105,7 @@ class AlignedDataset(BaseDataset):
             pose_map[i] = one_map[0]
         P_tensor=pose_map
 
-        densepose_name = B_path.replace('.png', '.npy').replace('.jpg','.npy').replace('train_img','train_densepose')
+        densepose_name = B_path.replace('.png', '.npy').replace('.jpg','.npy').replace(f'{self.phase}_img',f'{self.phase}_densepose')
         dense_mask = np.load(densepose_name).astype(np.float32)
         dense_mask = transform_A(dense_mask)
 
@@ -116,7 +117,7 @@ class AlignedDataset(BaseDataset):
         return input_dict
 
     def __len__(self):
-        return len(self.A_paths) // (self.opt.batchSize * self.opt.num_gpus) * (self.opt.batchSize * self.opt.num_gpus)
+        return len(self.A_paths) # // (self.opt.batchSize * self.opt.num_gpus) * (self.opt.batchSize * self.opt.num_gpus)
 
     def name(self):
         return 'AlignedDataset'
@@ -124,7 +125,7 @@ class AlignedDataset(BaseDataset):
 class AlignedDataset_aug(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
-        self.root = opt.dataroot    
+        self.root = self.root    
         self.diction={}
 
         self.shift = [25, 45, 65]
@@ -133,7 +134,7 @@ class AlignedDataset_aug(BaseDataset):
 
         if opt.isTrain or opt.use_encoded_image:
             dir_A = '_A' if self.opt.label_nc == 0 else '_label'
-            self.dir_A = os.path.join(opt.dataroot, opt.phase + dir_A)
+            self.dir_A = os.path.join(self.root, self.phase + dir_A)
             self.A_paths = sorted(make_dataset(self.dir_A))
 
         self.fine_height=256
@@ -141,19 +142,19 @@ class AlignedDataset_aug(BaseDataset):
         self.radius=5
 
         dir_B = '_B' if self.opt.label_nc == 0 else '_img'
-        self.dir_B = os.path.join(opt.dataroot, opt.phase + dir_B)  
+        self.dir_B = os.path.join(self.root, self.phase + dir_B)  
         self.B_paths = sorted(make_dataset(self.dir_B))
 
         self.dataset_size = len(self.A_paths)
 
         if opt.isTrain or opt.use_encoded_image:
             dir_E = '_edge'
-            self.dir_E = os.path.join(opt.dataroot, opt.phase + dir_E)
+            self.dir_E = os.path.join(self.root, self.phase + dir_E)
             self.E_paths = sorted(make_dataset(self.dir_E))
 
         if opt.isTrain or opt.use_encoded_image:
             dir_C = '_color'
-            self.dir_C = os.path.join(opt.dataroot, opt.phase + dir_C)
+            self.dir_C = os.path.join(self.root, self.phase + dir_C)
             self.C_paths = sorted(make_dataset(self.dir_C))
 
 
