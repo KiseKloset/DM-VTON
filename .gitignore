@@ -1,5 +1,6 @@
 # Proj
-__sample_fs__/
+sample/
+runs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
