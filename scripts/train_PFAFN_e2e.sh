@@ -1,5 +1,5 @@
-python -m torch.distributed.launch --nproc_per_node=1 --master_port=7129 train_PFAFN_e2e_fs.py \
---name FS_PF_e2e_align_100 \
+python -m torch.distributed.launch --nproc_per_node=1 --master_port=7129 train_PFAFN_e2e.py \
+--name SRMGN_PF_e2e_align_100 \
 --gpu_ids 2 \
 --align_corners \
 --launcher pytorch --resize_or_crop None \
@@ -10,7 +10,7 @@ python -m torch.distributed.launch --nproc_per_node=1 --master_port=7129 train_P
 --PBAFN_gen_checkpoint 'checkpoints/SRMGN_PB_e2e_align_200/PBAFN_gen_epoch_201.pth'  \
 --PFAFN_warp_checkpoint 'checkpoints/SRMGN_PF_stage1_align_100/PFAFN_warp_epoch_101.pth' \
 --checkpoints_dir checkpoints \
-&>> ./output/FS_PF_e2e_align_100.txt
+&>> ./output/SRMGN_PF_e2e_align_100.txt
 
 
 

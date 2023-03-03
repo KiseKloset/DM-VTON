@@ -345,7 +345,7 @@ class AlignedDataset_aug(BaseDataset):
         return input_dict
 
     def __len__(self):
-        return len(self.A_paths) // (self.opt.batchSize * self.opt.num_gpus) * (self.opt.batchSize * self.opt.num_gpus)
+        return len(self.A_paths) # // (self.opt.batchSize * self.opt.num_gpus) * (self.opt.batchSize * self.opt.num_gpus)
 
     def name(self):
         return 'AlignedDataset_aug'

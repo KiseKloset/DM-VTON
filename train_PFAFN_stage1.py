@@ -29,12 +29,11 @@ def CreateDataset(opt):
     #dataset = AlignedDataset_aug()
     from data.aligned_dataset import AlignedDataset
     dataset = AlignedDataset()
-    print("dataset [%s] was created" % (dataset.name()))
     dataset.initialize(opt)
     return dataset
 
 
-os.makedirs('sample_fs', exist_ok=True)
+os.makedirs('sample', exist_ok=True)
 opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
 
@@ -50,26 +49,23 @@ start_epoch, epoch_iter = 1, 0
 train_data = CreateDataset(opt)
 train_sampler = DistributedSampler(train_data)
 train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
-                          num_workers=4, pin_memory=True, sampler=train_sampler)
+                          num_workers=16, pin_memory=True, sampler=train_sampler)
 dataset_size = len(train_loader)
 print('#training images = %d' % dataset_size)
 
 PF_warp_model = AFWM(opt, 3)
-print(PF_warp_model)
 PF_warp_model.train()
-PF_warp_model.cuda()
+PF_warp_model.to(device)
 load_checkpoint_part_parallel(PF_warp_model, opt.PBAFN_warp_checkpoint, device)
 
 PB_warp_model = AFWM(opt, 45)
-print(PB_warp_model)
 PB_warp_model.eval()
-PB_warp_model.cuda()
+PB_warp_model.to(device)
 load_checkpoint_parallel(PB_warp_model, opt.PBAFN_warp_checkpoint, device)
 
 PB_gen_model = ResUnetGenerator(8, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
-print(PB_gen_model)
 PB_gen_model.eval()
-PB_gen_model.cuda()
+PB_gen_model.to(device)
 load_checkpoint_parallel(PB_gen_model, opt.PBAFN_gen_checkpoint, device)
 
 PF_warp_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(PF_warp_model).to(device)
@@ -107,6 +103,10 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     if epoch != start_epoch:
         epoch_iter = epoch_iter % dataset_size
 
+    train_loss = 0
+    train_fea_loss = 0
+    train_flow_loss = 0
+
     train_sampler.set_epoch(epoch)
 
     for i, data in enumerate(train_loader):
@@ -134,7 +134,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         size = data['label'].size()
         oneHot_size1 = (size[0], 25, size[2], size[3])
         densepose = torch.cuda.FloatTensor(torch.Size(oneHot_size1)).zero_()
-        densepose = densepose.scatter_(1, data['densepose'].data.long().cuda(), 1.0)
+        densepose = densepose.scatter_(1, data['densepose'].data.long().to(device), 1.0)
         densepose_fore = data['densepose'] / 24
         face_mask = torch.FloatTensor((data['label'].cpu().numpy() == 1).astype(np.int64)) + torch.FloatTensor((data['label'].cpu().numpy() == 12).astype(np.int64))
         other_clothes_mask = torch.FloatTensor((data['label'].cpu().numpy() == 5).astype(np.int64)) + torch.FloatTensor((data['label'].cpu().numpy() == 6).astype(np.int64)) \
@@ -144,13 +144,13 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         other_clothes_img = other_clothes_mask * real_image
         preserve_mask = torch.cat([face_mask, other_clothes_mask], 1)
 
-        concat_un = torch.cat([preserve_mask.cuda(), densepose, pose.cuda()], 1)
-        flow_out_un = PB_warp_model(concat_un.cuda(), clothes_un.cuda(), pre_clothes_edge_un.cuda())
+        concat_un = torch.cat([preserve_mask.to(device), densepose, pose.to(device)], 1)
+        flow_out_un = PB_warp_model(concat_un.to(device), clothes_un.to(device), pre_clothes_edge_un.to(device))
         warped_cloth_un, last_flow_un, cond_un_all, flow_un_all, delta_list_un, x_all_un, x_edge_all_un, delta_x_all_un, delta_y_all_un = flow_out_un
-        warped_prod_edge_un = F.grid_sample(pre_clothes_edge_un.cuda(), last_flow_un.permute(0, 2, 3, 1),
-                                            mode='bilinear', padding_mode='zeros', align_corners=True)
+        warped_prod_edge_un = F.grid_sample(pre_clothes_edge_un.to(device), last_flow_un.permute(0, 2, 3, 1),
+                                            mode='bilinear', padding_mode='zeros', align_corners=opt.align_corners)
 
-        flow_out_sup = PB_warp_model(concat_un.cuda(), clothes.cuda(), pre_clothes_edge.cuda())
+        flow_out_sup = PB_warp_model(concat_un.to(device), clothes.to(device), pre_clothes_edge.to(device))
         warped_cloth_sup, last_flow_sup, cond_sup_all, flow_sup_all, delta_list_sup, x_all_sup, x_edge_all_sup, delta_x_all_sup, delta_y_all_sup = flow_out_sup
 
         arm_mask = torch.FloatTensor((data['label'].cpu().numpy() == 11).astype(np.float64)) + torch.FloatTensor((data['label'].cpu().numpy() == 13).astype(np.float64))
@@ -160,10 +160,10 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
                               + torch.FloatTensor((data['densepose'].cpu().numpy() == 19).astype(np.int64)) + torch.FloatTensor((data['densepose'].cpu().numpy() == 20).astype(np.int64)) \
                               + torch.FloatTensor((data['densepose'].cpu().numpy() == 21).astype(np.int64)) + torch.FloatTensor((data['densepose'].cpu().numpy() == 22))
         hand_img = (arm_mask * hand_mask) * real_image
-        dense_preserve_mask = dense_preserve_mask.cuda() * (1 - warped_prod_edge_un)
+        dense_preserve_mask = dense_preserve_mask.to(device) * (1 - warped_prod_edge_un)
         preserve_region = face_img + other_clothes_img + hand_img
 
-        gen_inputs_un = torch.cat([preserve_region.cuda(), warped_cloth_un, warped_prod_edge_un, dense_preserve_mask], 1)
+        gen_inputs_un = torch.cat([preserve_region.to(device), warped_cloth_un, warped_prod_edge_un, dense_preserve_mask], 1)
         gen_outputs_un = PB_gen_model(gen_inputs_un)
         p_rendered_un, m_composite_un = torch.split(gen_outputs_un, [3, 1], 1)
         p_rendered_un = torch.tanh(p_rendered_un)
@@ -171,7 +171,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         m_composite_un = m_composite_un * warped_prod_edge_un
         p_tryon_un = warped_cloth_un * m_composite_un + p_rendered_un * (1 - m_composite_un)
 
-        flow_out = PF_warp_model(p_tryon_un.detach(), clothes.cuda(), pre_clothes_edge.cuda())
+        flow_out = PF_warp_model(p_tryon_un.detach(), clothes.to(device), pre_clothes_edge.to(device))
         warped_cloth, last_flow, cond_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = flow_out
         warped_prod_edge = x_edge_all[4]
 
@@ -181,11 +181,11 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         loss_fea_sup_all = 0
         loss_flow_sup_all = 0
 
-        l1_loss_batch = torch.abs(warped_cloth_sup.detach() - person_clothes.cuda())
-        l1_loss_batch = l1_loss_batch.reshape(opt.batchSize, 3 * 256 * 192)
+        l1_loss_batch = torch.abs(warped_cloth_sup.detach() - person_clothes.to(device))
+        l1_loss_batch = l1_loss_batch.reshape(-1, 3 * 256 * 192) # opt.batchSize
         l1_loss_batch = l1_loss_batch.sum(dim=1) / (3 * 256 * 192)
-        l1_loss_batch_pred = torch.abs(warped_cloth.detach() - person_clothes.cuda())
-        l1_loss_batch_pred = l1_loss_batch_pred.reshape(opt.batchSize, 3 * 256 * 192)
+        l1_loss_batch_pred = torch.abs(warped_cloth.detach() - person_clothes.to(device))
+        l1_loss_batch_pred = l1_loss_batch_pred.reshape(-1, 3 * 256 * 192) # opt.batchSize
         l1_loss_batch_pred = l1_loss_batch_pred.sum(dim=1) / (3 * 256 * 192)
         weight = (l1_loss_batch < l1_loss_batch_pred).float()
         num_all = len(np.where(weight.cpu().numpy() > 0)[0])
@@ -195,9 +195,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         for num in range(5):
             cur_person_clothes = F.interpolate(person_clothes, scale_factor=0.5 ** (4 - num), mode='bilinear')
             cur_person_clothes_edge = F.interpolate(person_clothes_edge, scale_factor=0.5 ** (4 - num), mode='bilinear')
-            loss_l1 = criterionL1(x_all[num], cur_person_clothes.cuda())
-            loss_vgg = criterionVGG(x_all[num], cur_person_clothes.cuda())
-            loss_edge = criterionL1(x_edge_all[num], cur_person_clothes_edge.cuda())
+            loss_l1 = criterionL1(x_all[num], cur_person_clothes.to(device))
+            loss_vgg = criterionVGG(x_all[num], cur_person_clothes.to(device))
+            loss_edge = criterionL1(x_edge_all[num], cur_person_clothes_edge.to(device))
             b, c, h, w = delta_x_all[num].shape
             loss_flow_x = (delta_x_all[num].pow(2) + epsilon * epsilon).pow(0.45)
             loss_flow_x = torch.sum(loss_flow_x) / (b * c * h * w)
@@ -219,10 +219,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         loss_all = 0.01 * loss_smooth + loss_all
 
         # sum per device losses
-        if opt.local_rank == 0:
-            writer.add_scalar('loss_all', loss_all, step)
-            writer.add_scalar('loss_fea_sup_all', loss_fea_sup_all, step)
-            writer.add_scalar('loss_flow_sup_all', loss_flow_sup_all, step)
+        train_loss += loss_all
+        train_fea_loss += loss_fea_sup_all
+        train_flow_loss += loss_flow_sup_all
 
         if epoch < opt.niter:
             optimizer_part.zero_grad()
@@ -234,17 +233,17 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
             optimizer.step()
 
         ############## Display results and errors ##########
-        path = 'sample_fs/' + opt.name
+        path = 'sample/' + opt.name
         os.makedirs(path, exist_ok=True)
         ### display output images
         if step % 1000 == 0:
             if opt.local_rank == 0:
-                a = real_image.float().cuda()
+                a = real_image.float().to(device)
                 b = p_tryon_un.detach()
-                c = clothes.cuda()
-                d = person_clothes.cuda()
-                e = torch.cat([person_clothes_edge.cuda(), person_clothes_edge.cuda(), person_clothes_edge.cuda()], 1)
-                f = torch.cat([densepose_fore.cuda(), densepose_fore.cuda(), densepose_fore.cuda()], 1)
+                c = clothes.to(device)
+                d = person_clothes.to(device)
+                e = torch.cat([person_clothes_edge.to(device), person_clothes_edge.to(device), person_clothes_edge.to(device)], 1)
+                f = torch.cat([densepose_fore.to(device), densepose_fore.to(device), densepose_fore.to(device)], 1)
                 g = warped_cloth
                 h = torch.cat([warped_prod_edge, warped_prod_edge, warped_prod_edge], 1)
                 combine = torch.cat([a[0], b[0], c[0], d[0], e[0], f[0], g[0], h[0]], 2).squeeze()
@@ -252,7 +251,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
                 writer.add_image('combine', (combine.data + 1) / 2.0, step)
                 rgb = (cv_img * 255).astype(np.uint8)
                 bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-                cv2.imwrite('sample_fs/' + opt.name + '/' + str(step) + '.jpg', bgr)
+                cv2.imwrite('sample/' + opt.name + '/' + str(step) + '.jpg', bgr)
 
         step += 1
         iter_end_time = time.time()
@@ -264,25 +263,33 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         now = time_stamp.strftime('%Y.%m.%d-%H:%M:%S')
         if step % 100 == 0:
             if opt.local_rank == 0:
-                print('{}:{}:[step-{}/{}: {:.2%}]--[loss-{:.6f}]--[loss-{:.6f}]--[loss-{:.6f}]--[lrpf-{:.6f}]--[ETA-{}]'.format(
+                print('{}:{}:[step-{}/{}: {:.2%}]--[loss_all-{:.6f}]--[loss_fea-{:.6f}]--[loss_flow-{:.6f}]--[lrpf-{:.6f}]--[ETA-{}]'.format(
                                                                                now, epoch_iter,
                                                                                step, all_steps, step/all_steps, 
                                                                                loss_all, loss_fea_sup_all, loss_flow_sup_all, 
-                                                                               PPF_warp_model.module.old_lr, eta))
+                                                                               PF_warp_model.module.old_lr, eta))
 
         if epoch_iter >= dataset_size:
             break
 
+    # Visualize train loss
+    train_loss /= len(train_loader)
+    train_fea_loss /= len(train_loader)
+    train_flow_loss /= len(train_loader)
+    writer.add_scalar('train_loss', train_loss, epoch)
+    writer.add_scalar('train_fea_loss', train_fea_loss, epoch)
+    writer.add_scalar('train_flow_loss', train_flow_loss, epoch)
+
     # end of epoch
     iter_end_time = time.time()
     if opt.local_rank == 0:
-        print('End of epoch %d / %d \t Time Taken: %d sec' %
-              (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
+        print('End of epoch %d / %d: train_loss: %.3f \t time: %d sec' %
+                (epoch, opt.niter + opt.niter_decay, train_loss, time.time() - epoch_start_time))
 
     ### save model for this epoch
     if epoch % opt.save_epoch_freq == 0:
         if opt.local_rank == 0:
-            print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
+            print('Saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
             save_checkpoint(PF_warp_model.module,
                             os.path.join(opt.checkpoints_dir, opt.name, 'PFAFN_warp_epoch_%03d.pth' % (epoch + 1)))
 

@@ -363,13 +363,14 @@ class RefinePyramid(nn.Module):
 
 
 class AFlowNet(nn.Module):
-    def __init__(self, num_pyramid, fpn_dim=256):
+    def __init__(self, num_pyramid, fpn_dim=256, align_corners=True):
         super(AFlowNet, self).__init__()
 
         padding_type='zero'
         actvn = 'lrelu'
         normalize_mlp = False
         modulated_conv = True
+        self.align_corners = align_corners
 
 
         self.netRefine = []
@@ -430,7 +431,7 @@ class AFlowNet(nn.Module):
 
               if last_flow is not None and warp_feature:
                   x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
-                       mode='bilinear', padding_mode='border', align_corners=True)
+                       mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               else:
                   x_warp_after = x_warp
 
@@ -440,22 +441,22 @@ class AFlowNet(nn.Module):
               flow = self.netF[i](stylemap, style)
               flow = apply_offset(flow)
               if last_flow is not None:
-                  flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=True)
+                  flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               else:
                   flow = flow.permute(0, 3, 1, 2)
 
               last_flow = flow
-              x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=True)
+              x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               concat = torch.cat([x_warp,x_cond],1)
               flow = self.netRefine[i](concat)
               flow = apply_offset(flow)
-              flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=True)
+              flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
 
               last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
               
 
         x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1),
-                     mode='bilinear', padding_mode='border', align_corners=True)
+                     mode='bilinear', padding_mode='border', align_corners=self.align_corners)
         return x_warp, last_flow
 
 
@@ -468,7 +469,7 @@ class AFWM(nn.Module):
         self.cond_features = FeatureEncoder(input_nc, num_filters)
         self.image_FPN = RefinePyramid(num_filters)
         self.cond_FPN = RefinePyramid(num_filters)
-        self.aflow_net = AFlowNet(len(num_filters))
+        self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
         
 
     def forward(self, cond_input, image_input):

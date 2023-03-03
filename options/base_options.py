@@ -49,6 +49,7 @@ class BaseOptions():
         self.parser.add_argument('--n_local_enhancers', type=int, default=1, help='number of local enhancers to use')        
         self.parser.add_argument('--niter_fix_global', type=int, default=0, help='number of epochs that we only train the outmost local enhancer')        
         self.parser.add_argument('--tv_weight', type=float, default=0.1, help='weight for TV loss')
+        self.parser.add_argument('--align_corners', action='store_true', help='align corners for grid_sample')
 
         self.initialized = True
 
@@ -71,10 +72,10 @@ class BaseOptions():
 
         args = vars(self.opt)
 
-        print('------------ Options -------------')
-        for k, v in sorted(args.items()):
-            print('%s: %s' % (str(k), str(v)))
-        print('-------------- End ----------------')
+        # print('------------ Options -------------')
+        # for k, v in sorted(args.items()):
+        #     print('%s: %s' % (str(k), str(v)))
+        # print('-------------- End ----------------')
 
         # save to the disk        
         expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)

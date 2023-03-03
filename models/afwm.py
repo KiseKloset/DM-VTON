@@ -365,13 +365,14 @@ class RefinePyramid(nn.Module):
 
 
 class AFlowNet(nn.Module):
-    def __init__(self, num_pyramid, fpn_dim=256):
+    def __init__(self, num_pyramid, fpn_dim=256, align_corners=True):
         super(AFlowNet, self).__init__()
 
         padding_type='zero'
         actvn = 'lrelu'
         normalize_mlp = False
         modulated_conv = True
+        self.align_corners = align_corners
 
         self.netRefine = []
 
@@ -459,7 +460,7 @@ class AFlowNet(nn.Module):
 
               if last_flow is not None and warp_feature:
                   x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
-                       mode='bilinear', padding_mode='border', align_corners=True)
+                       mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               else:
                   x_warp_after = x_warp
 
@@ -468,25 +469,25 @@ class AFlowNet(nn.Module):
               delta_list.append(flow)
               flow = apply_offset(flow)
               if last_flow is not None:
-                  flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=True)
+                  flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               else:
                   flow = flow.permute(0, 3, 1, 2)
 
               last_flow = flow
-              x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=True)
+              x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               concat = torch.cat([x_warp,x_cond],1)
               flow = self.netRefine[i](concat)
               delta_list.append(flow)
               flow = apply_offset(flow)
-              flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=True)
+              flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
 
               last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
               last_flow_all.append(last_flow)
               cur_x = F.interpolate(x, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
-              cur_x_warp = F.grid_sample(cur_x, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=True)
+              cur_x_warp = F.grid_sample(cur_x, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               x_all.append(cur_x_warp)
               cur_x_edge = F.interpolate(x_edge, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
-              cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='zeros', align_corners=True)
+              cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='zeros', align_corners=self.align_corners)
               x_edge_all.append(cur_x_warp_edge)
               flow_x,flow_y = torch.split(last_flow,1,dim=1)
               delta_x = F.conv2d(flow_x, self.weight)
@@ -495,7 +496,7 @@ class AFlowNet(nn.Module):
               delta_y_all.append(delta_y)
 
         x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1),
-                     mode='bilinear', padding_mode='border', align_corners=True)
+                     mode='bilinear', padding_mode='border', align_corners=self.align_corners)
         return x_warp, last_flow, cond_fea_all, last_flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
 
 
@@ -508,7 +509,7 @@ class AFWM(nn.Module):
         self.cond_features = FeatureEncoder(input_nc, num_filters)
         self.image_FPN = RefinePyramid(num_filters)
         self.cond_FPN = RefinePyramid(num_filters)
-        self.aflow_net = AFlowNet(len(num_filters))
+        self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
         self.old_lr = opt.lr
         self.old_lr_warp = opt.lr*0.2
 

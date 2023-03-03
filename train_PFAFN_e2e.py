@@ -58,8 +58,8 @@ PF_warp_model.train()
 PF_warp_model.to(device)
 load_checkpoint_parallel(PF_warp_model, opt.PFAFN_warp_checkpoint, device)
 
-PF_gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
-# PF_gen_model = RMGNGenerator(multilevel=False, predmask=True)
+# PF_gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
+PF_gen_model = RMGNGenerator(multilevel=False, predmask=True)
 PF_gen_model.train()
 PF_gen_model.to(device)
 
@@ -228,12 +228,11 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         skin_mask = warped_prod_edge_un.detach() * (1 - person_clothes_edge.to(device))
 
-        # gen_inputs_clothes = torch.cat([warped_cloth, warped_prod_edge], 1)
-        # gen_inputs_persons = p_tryon_un.detach()
-        # gen_outputs, out_L1, out_L2, M_list = PF_gen_model(gen_inputs_persons, gen_inputs_clothes)
-
-        gen_inputs = torch.cat([p_tryon_un.detach(), warped_cloth, warped_prod_edge], 1)
-        gen_outputs = PF_gen_model(gen_inputs)
+        # gen_inputs = torch.cat([p_tryon_un.detach(), warped_cloth, warped_prod_edge], 1)
+        gen_inputs_clothes = torch.cat([warped_cloth, warped_prod_edge], 1)
+        gen_inputs_persons = p_tryon_un.detach()
+        
+        gen_outputs, out_L1, out_L2, M_list = PF_gen_model(gen_inputs_persons, gen_inputs_clothes)
 
         p_rendered, m_composite = torch.split(gen_outputs, [3, 1], 1)
         p_rendered = torch.tanh(p_rendered)

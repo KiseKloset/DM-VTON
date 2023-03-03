@@ -31,6 +31,8 @@ class BaseOptions():
         self.parser.add_argument('--display_winsize', type=int, default=512,  help='display window size')
         self.parser.add_argument('--tf_log', action='store_true', help='if specified, use tensorboard logging. Requires tensorflow installed')
 
+        self.parser.add_argument('--align_corners', action='store_true', help='align corners for grid_sample')
+
         self.initialized = True
 
     def parse(self, save=True):
@@ -51,9 +53,9 @@ class BaseOptions():
 
         args = vars(self.opt)
 
-        print('------------ Options -------------')
-        for k, v in sorted(args.items()):
-            print('%s: %s' % (str(k), str(v)))
-        print('-------------- End ----------------')
+        # print('------------ Options -------------')
+        # for k, v in sorted(args.items()):
+        #     print('%s: %s' % (str(k), str(v)))
+        # print('-------------- End ----------------')
 
         return self.opt
