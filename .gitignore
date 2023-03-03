@@ -1,7 +1,7 @@
 # Proj
 sample/
 runs/
-# checkpoints/
+checkpoints/
 artifact/
 
 # Byte-compiled / optimized / DLL files
