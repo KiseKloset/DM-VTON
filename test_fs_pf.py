@@ -112,4 +112,5 @@ with torch.no_grad():
             
     ############## FPS ##############
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
-    print(f'Speed: %.1fms pre-process, %.1fms warp, %.1fms gen per image at shape {real_image.size()}' % t)
+    t = (sum(t), ) + t
+    print(f'Speed: %.1fms all, %.1fms pre-process, %.1fms warp, %.1fms gen per image at shape {real_image.size()}' % t)
