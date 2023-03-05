@@ -443,9 +443,17 @@ class AFlowNet(nn.Module):
         self.netStyle = nn.ModuleList(self.netStyle)
         self.netF = nn.ModuleList(self.netF)
 
-        self.cond_style = torch.nn.Sequential(torch.nn.Conv2d(256, 128, kernel_size=(8,6), stride=1, padding=0), torch.nn.LeakyReLU(inplace=False, negative_slope=0.1))
+        self.cond_style = torch.nn.Sequential(
+            torch.nn.AdaptiveAvgPool2d((1,1)),
+            torch.nn.Conv2d(256, 128, kernel_size=(1,1), stride=1, padding=0), 
+            torch.nn.LeakyReLU(inplace=False, negative_slope=0.1)
+        )
 
-        self.image_style = torch.nn.Sequential(torch.nn.Conv2d(256, 128, kernel_size=(8,6), stride=1, padding=0), torch.nn.LeakyReLU(inplace=False, negative_slope=0.1))
+        self.image_style = torch.nn.Sequential(
+            torch.nn.AdaptiveAvgPool2d((1,1)),
+            torch.nn.Conv2d(256, 128, kernel_size=(1,1), stride=1, padding=0), 
+            torch.nn.LeakyReLU(inplace=False, negative_slope=0.1)
+        )
 
 
     def forward(self, x, x_warps, x_conds, warp_feature=True):
