@@ -4,6 +4,7 @@ sample/
 runs/
 checkpoints/
 artifact/
+video/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
