@@ -10,7 +10,7 @@ from torchvision import utils
 from tqdm import tqdm
 
 from data.data_loader_test import CreateDataLoader
-from models.afwm_test import AFWM
+from models.afwm_test import AFWM, style_dt
 from models.networks import ResUnetGenerator
 from models.rmgn_generator import RMGNGenerator
 from options.test_options import TestOptions
@@ -29,7 +29,7 @@ dataset_size = len(data_loader)
 warp_model = AFWM(opt, 3)
 warp_model.eval()
 warp_model.to(device)
-load_checkpoint(warp_model, opt.warp_checkpoint, device)
+# load_checkpoint(warp_model, opt.warp_checkpoint, device)
 
 gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
 # gen_model = RMGNGenerator(multilevel=False, predmask=True)
@@ -56,6 +56,7 @@ with torch.no_grad():
             clothes = data['clothes']
             ##edge is extracted from the clothes image with the built-in function in python
             edge = data['edge']
+            # egde = edge[edge > 0.5]
             edge = torch.FloatTensor((edge.detach().numpy() > 0.5).astype(np.int64))
             clothes = clothes * edge        
 
@@ -114,3 +115,7 @@ with torch.no_grad():
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
     t = (sum(t), ) + t
     print(f'Speed: %.1fms all, %.1fms pre-process, %.1fms warp, %.1fms gen per image at shape {real_image.size()}' % t)
+
+
+    st = tuple(x.t / seen * 1E3 for x in style_dt) 
+    print(f"Style: {st[0]:.2f}ms, style-f: {st[1]:.2f}ms, grid_sample: {st[3]:.2f}ms, refine: {st[4]:.2f}ms, offset: {st[5]:.2f}ms, cond_pyramids: {st[6]:.2f}ms, image_pyramids: {st[7]:.2f}ms")

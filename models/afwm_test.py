@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from math import sqrt
+from utils.utils import Profile
+
+style_dt = (Profile(), Profile(), Profile(), Profile(), Profile(), Profile(), Profile(), Profile())
 
 def apply_offset(offset):
     sizes = list(offset.size()[2:])
@@ -57,6 +60,35 @@ def equal_lr(module, name='weight'):
 
     return module
 
+
+class EqualConv2d(nn.Module):
+    def __init__(
+        self,  
+        in_channels: int, 
+        out_channels: int, 
+        kernel_size: int, 
+        stride: int = 1, 
+        padding: int = 0, 
+        bias: bool = True,
+    ) -> None:
+        super().__init__()
+
+        conv = nn.Conv2d(
+            in_channels=in_channels, 
+            out_channels=out_channels, 
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=bias,
+        )
+        conv.weight.data.normal_()
+        conv.bias.data.zero_()
+        self.conv = equal_lr(conv)
+
+    def forward(self, input):
+        return self.conv(input)
+
+        
 class EqualLinear(nn.Module):
     def __init__(self, in_dim, out_dim):
         super().__init__()
@@ -420,43 +452,57 @@ class AFlowNet(nn.Module):
         last_flow = None
         
         B = x_conds[len(x_warps)-1].shape[0]
-
-        cond_style = self.cond_style(x_conds[len(x_warps) - 1]).view(B,-1)
-        image_style = self.image_style(x_warps[len(x_warps) - 1]).view(B,-1)
-        style = torch.cat([cond_style, image_style], 1)
+        with style_dt[2]:
+            cond_style = self.cond_style(x_conds[len(x_warps) - 1]).view(B,-1)
+            image_style = self.image_style(x_warps[len(x_warps) - 1]).view(B,-1)
+            style = torch.cat([cond_style, image_style], 1)
 
         for i in range(len(x_warps)):
-              x_warp = x_warps[len(x_warps) - 1 - i]
-              x_cond = x_conds[len(x_warps) - 1 - i]
+            x_warp = x_warps[len(x_warps) - 1 - i]
+            x_cond = x_conds[len(x_warps) - 1 - i]
 
-              if last_flow is not None and warp_feature:
-                  x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
-                       mode='bilinear', padding_mode='border', align_corners=self.align_corners)
-              else:
-                  x_warp_after = x_warp
+            if last_flow is not None and warp_feature:
+                with style_dt[3]:
+                    x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
+                        mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+            else:
+                x_warp_after = x_warp
 
+            with style_dt[0]:
+                print("Style:", style.shape)
+                stylemap = self.netStyle[i](x_warp_after, style)
+            
+            with style_dt[1]:
+                flow = self.netF[i](stylemap, style)
 
-              stylemap = self.netStyle[i](x_warp_after, style)
+            with style_dt[5]:
+                flow = apply_offset(flow)
 
-              flow = self.netF[i](stylemap, style)
-              flow = apply_offset(flow)
-              if last_flow is not None:
-                  flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
-              else:
-                  flow = flow.permute(0, 3, 1, 2)
+            if last_flow is not None:
+                with style_dt[3]:
+                    flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+            else:
+                flow = flow.permute(0, 3, 1, 2)
 
-              last_flow = flow
-              x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
-              concat = torch.cat([x_warp,x_cond],1)
-              flow = self.netRefine[i](concat)
-              flow = apply_offset(flow)
-              flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+            last_flow = flow
+            with style_dt[3]:
+                x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+            concat = torch.cat([x_warp,x_cond],1)
 
-              last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
+            with style_dt[4]:
+                flow = self.netRefine[i](concat)
+
+            with style_dt[5]:
+                flow = apply_offset(flow)
+
+            with style_dt[3]:
+                flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+
+            last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
               
-
-        x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1),
-                     mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+        with style_dt[3]:
+            x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1),
+                        mode='bilinear', padding_mode='border', align_corners=self.align_corners)
         return x_warp, last_flow
 
 
@@ -474,9 +520,11 @@ class AFWM(nn.Module):
 
     def forward(self, cond_input, image_input):
 
-        #import ipdb; ipdb.set_trace()
-        cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
-        image_pyramids = self.image_FPN(self.image_features(image_input))
+        with style_dt[-1]:
+            image_pyramids = self.image_FPN(self.image_features(image_input))
+
+        with style_dt[-2]:
+            cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
 
         x_warp, last_flow = self.aflow_net(image_input, image_pyramids, cond_pyramids)
 
