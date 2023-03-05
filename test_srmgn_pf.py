@@ -10,7 +10,7 @@ from torchvision import utils
 from tqdm import tqdm
 
 from data.data_loader_test import CreateDataLoader
-from models.afwm_test import AFWM
+from models.afwm_test import AFWM, style_dt
 from models.rmgn_generator import RMGNGenerator
 from options.test_options import TestOptions
 from utils.utils import load_checkpoint, Profile
@@ -106,3 +106,7 @@ with torch.no_grad():
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
     t = (sum(t), ) + t
     print(f'Speed: %.1fms all, %.1fms pre-process, %.1fms warp, %.1fms gen per image at shape {real_image.size()}' % t)
+
+
+    st = tuple(x.t / seen * 1E3 for x in style_dt) 
+    print(f"Style: {st[0]:.2f}ms, style-f: {st[1]:.2f}ms, grid_sample: {st[3]:.2f}ms, refine: {st[4]:.2f}ms, offset: {st[5]:.2f}ms, cond_pyramids: {st[6]:.2f}ms, image_pyramids: {st[7]:.2f}ms")
