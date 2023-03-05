@@ -87,7 +87,7 @@ class EqualConv2d(nn.Module):
 
         conv = nn.Conv2d(
             in_channels=in_channels, 
-            out_channel=out_channels, 
+            out_channels=out_channels, 
             kernel_size=kernel_size,
             stride=stride,
             padding=padding,
