@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from models.afwm import AFWM, TVLoss 
+from models.afwm_pb import AFWM as PBAFWM 
 from models.networks import ResUnetGenerator, VGGLoss
 from options.train_options import TrainOptions
 from utils.utils import load_checkpoint_parallel, load_checkpoint_part_parallel, save_checkpoint
@@ -56,9 +57,9 @@ print('#training images = %d' % dataset_size)
 PF_warp_model = AFWM(opt, 3)
 PF_warp_model.train()
 PF_warp_model.to(device)
-load_checkpoint_part_parallel(PF_warp_model, opt.PBAFN_warp_checkpoint, device)
+#load_checkpoint_part_parallel(PF_warp_model, opt.PBAFN_warp_checkpoint, device)
 
-PB_warp_model = AFWM(opt, 45)
+PB_warp_model = PBAFWM(opt, 45)
 PB_warp_model.eval()
 PB_warp_model.to(device)
 load_checkpoint_parallel(PB_warp_model, opt.PBAFN_warp_checkpoint, device)

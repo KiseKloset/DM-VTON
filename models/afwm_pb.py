@@ -6,7 +6,6 @@ from math import sqrt
 from options.train_options import TrainOptions
 opt = TrainOptions().parse()
 
-from models.mobile_unet_extractor import MobileNetV2_dynamicFPN
 
 
 def apply_offset(offset):
@@ -381,7 +380,7 @@ class AFlowNet(nn.Module):
 
         self.netStyle = []
 
-        # self.netF = []
+        self.netF = []
 
         for i in range(num_pyramid):
 
@@ -407,11 +406,11 @@ class AFlowNet(nn.Module):
 
             self.netRefine.append(netRefine_layer)
             self.netStyle.append(style_block)
-            # self.netF.append(style_F_block)
+            self.netF.append(style_F_block)
 
         self.netRefine = nn.ModuleList(self.netRefine)
         self.netStyle = nn.ModuleList(self.netStyle)
-        # self.netF = nn.ModuleList(self.netF)
+        self.netF = nn.ModuleList(self.netF)
 
         self.cond_style = torch.nn.Sequential(torch.nn.Conv2d(256, 128, kernel_size=(8,6), stride=1, padding=0), torch.nn.LeakyReLU(inplace=False, negative_slope=0.1))
 
@@ -468,7 +467,7 @@ class AFlowNet(nn.Module):
                   x_warp_after = x_warp
 
               flow = self.netStyle[i](x_warp_after, style)
-            #   flow = self.netF[i](flow, style)
+              flow = self.netF[i](flow, style)
               delta_list.append(flow)
               flow = apply_offset(flow)
               if last_flow is not None:
@@ -508,13 +507,13 @@ class AFWM(nn.Module):
     def __init__(self, opt, input_nc):
         super(AFWM, self).__init__()
         num_filters = [64,128,256,256,256]
-        # self.image_features = FeatureEncoder(3, num_filters) 
-        # self.cond_features = FeatureEncoder(input_nc, num_filters)
-        # self.image_FPN = RefinePyramid(num_filters)
-        # self.cond_FPN = RefinePyramid(num_filters)
+        self.image_features = FeatureEncoder(3, num_filters) 
+        self.cond_features = FeatureEncoder(input_nc, num_filters)
+        self.image_FPN = RefinePyramid(num_filters)
+        self.cond_FPN = RefinePyramid(num_filters)
 
-        self.image_mobile = MobileNetV2_dynamicFPN()
-        self.cond_mobile = MobileNetV2_dynamicFPN()
+        # self.image_mobile = MobileNetV2_dynamicFPN()
+        # self.cond_mobile = MobileNetV2_dynamicFPN()
         self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
         self.old_lr = opt.lr
         self.old_lr_warp = opt.lr*0.2
@@ -522,8 +521,8 @@ class AFWM(nn.Module):
     def forward(self, cond_input, image_input, image_edge=None):
 
         #import ipdb; ipdb.set_trace()
-        cond_pyramids = self.cond_mobile(cond_input) # maybe use nn.Sequential
-        image_pyramids = self.image_mobile(image_input)
+        cond_pyramids = self.cond_FPN(self.cond_features(cond_input))
+        image_pyramids = self.image_FPN(self.image_features(image_input))
 
         x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = self.aflow_net(image_input, image_edge, image_pyramids, cond_pyramids)
 

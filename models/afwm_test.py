@@ -5,6 +5,9 @@ import numpy as np
 from math import sqrt
 from utils.utils import Profile
 
+from models.mobile_unet_extractor import MobileNetV2_dynamicFPN
+
+
 style_dt = (Profile(), Profile(), Profile(), Profile(), Profile(), Profile(), Profile(), Profile())
 
 def apply_offset(offset):
@@ -423,7 +426,7 @@ class AFlowNet(nn.Module):
                 torch.nn.Conv2d(in_channels=32, out_channels=2, kernel_size=3, stride=1, padding=1)
             )
 
-            style_block = StyledConvBlock(256, 49, latent_dim=256,
+            style_block = Styled_F_ConvBlock(256, 2, latent_dim=256,
                                          padding=padding_type, actvn=actvn,
                                          normalize_affine_output=normalize_mlp,
                                          modulated_conv=modulated_conv)
@@ -443,17 +446,9 @@ class AFlowNet(nn.Module):
         self.netStyle = nn.ModuleList(self.netStyle)
         self.netF = nn.ModuleList(self.netF)
 
-        self.cond_style = torch.nn.Sequential(
-            torch.nn.AdaptiveAvgPool2d((1,1)),
-            torch.nn.Conv2d(256, 128, kernel_size=(1,1), stride=1, padding=0), 
-            torch.nn.LeakyReLU(inplace=False, negative_slope=0.1)
-        )
+        self.cond_style = torch.nn.Sequential(torch.nn.Conv2d(256, 128, kernel_size=(8,6), stride=1, padding=0), torch.nn.LeakyReLU(inplace=False, negative_slope=0.1))
 
-        self.image_style = torch.nn.Sequential(
-            torch.nn.AdaptiveAvgPool2d((1,1)),
-            torch.nn.Conv2d(256, 128, kernel_size=(1,1), stride=1, padding=0), 
-            torch.nn.LeakyReLU(inplace=False, negative_slope=0.1)
-        )
+        self.image_style = torch.nn.Sequential(torch.nn.Conv2d(256, 128, kernel_size=(8,6), stride=1, padding=0), torch.nn.LeakyReLU(inplace=False, negative_slope=0.1))
 
 
     def forward(self, x, x_warps, x_conds, warp_feature=True):
@@ -477,10 +472,10 @@ class AFlowNet(nn.Module):
                 x_warp_after = x_warp
 
             with style_dt[0]:
-                stylemap = self.netStyle[i](x_warp_after, style)
+                flow = self.netStyle[i](x_warp_after, style)
             
-            with style_dt[1]:
-                flow = self.netF[i](stylemap, style)
+            # with style_dt[1]:
+            #     flow = self.netF[i](flow, style)
 
             with style_dt[5]:
                 flow = apply_offset(flow)
@@ -523,15 +518,33 @@ class AFWM(nn.Module):
         self.image_FPN = RefinePyramid(num_filters)
         self.cond_FPN = RefinePyramid(num_filters)
         self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
+
+        self.image_mobile = MobileNetV2_dynamicFPN()
+        self.image_stream = None
+        self.cond_mobile = MobileNetV2_dynamicFPN()
+        self.cond_stream = None
         
 
     def forward(self, cond_input, image_input):
+        if self.image_stream is None:
+            self.image_stream = torch.cuda.Stream()
 
-        with style_dt[-1]:
-            image_pyramids = self.image_FPN(self.image_features(image_input))
+        if self.cond_stream is None:
+            self.cond_stream = torch.cuda.Stream()
 
-        with style_dt[-2]:
-            cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
+        torch.cuda.synchronize()
+        with torch.cuda.stream(self.image_stream):
+            image_pyramids = self.image_mobile(image_input)
+
+        with torch.cuda.stream(self.cond_stream):
+            cond_pyramids = self.cond_mobile(cond_input) # maybe use nn.Sequential
+        torch.cuda.synchronize()
+
+        # # image_pyramids = self.image_FPN(self.image_features(image_input))
+        # image_pyramids = self.image_mobile(image_input)
+
+        # # cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
+        # cond_pyramids = self.cond_mobile(cond_input) # maybe use nn.Sequential
 
         x_warp, last_flow = self.aflow_net(image_input, image_pyramids, cond_pyramids)
 

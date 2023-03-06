@@ -28,7 +28,7 @@ class AlignedDataset(BaseDataset):
         self.e_name = []
         self.get_file_name()
         #import ipdb; ipdb.set_trace()
-        self.dataset_size = len(self.im_name)
+        self.dataset_size = len(self.im_name) // 5
 
     def get_file_name(self):
 

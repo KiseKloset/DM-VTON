@@ -4,6 +4,8 @@ import time
 
 import torch
 
+flag = [False]
+
 
 class Profile(contextlib.ContextDecorator):
     """
@@ -32,8 +34,9 @@ class Profile(contextlib.ContextDecorator):
         """
         Stop timing.
         """
-        self.dt = self.time() - self.start  # delta-time
-        self.t += self.dt  # accumulate dt
+        if flag[0]:
+            self.dt = self.time() - self.start  # delta-time
+            self.t += self.dt  # accumulate dt
 
     def time(self):
         """

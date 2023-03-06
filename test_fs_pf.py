@@ -14,7 +14,10 @@ from models.afwm_test import AFWM, style_dt
 from models.networks import ResUnetGenerator
 from models.rmgn_generator import RMGNGenerator
 from options.test_options import TestOptions
-from utils.utils import load_checkpoint, Profile
+from utils.utils import load_checkpoint, Profile, flag
+
+from models.mobile_unet_generator import MobileNetUNet
+
 
 
 opt = TestOptions().parse()
@@ -32,10 +35,11 @@ warp_model.to(device)
 # load_checkpoint(warp_model, opt.warp_checkpoint, device)
 
 gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
+# gen_model = MobileNetUNet(7, 4)
 # gen_model = RMGNGenerator(multilevel=False, predmask=True)
 gen_model.eval()
 gen_model.to(device)
-load_checkpoint(gen_model, opt.gen_checkpoint, device)
+# load_checkpoint(gen_model, opt.gen_checkpoint, device)
 
 total_steps = (start_epoch-1) * dataset_size + epoch_iter
 step = 0
@@ -49,25 +53,25 @@ os.makedirs(tryon_path, exist_ok=True)
 os.makedirs(warp_path, exist_ok=True)
 os.makedirs(vis_path, exist_ok=True)
 with torch.no_grad():
-    seen, dt = 0, (Profile(), Profile(), Profile())
+    seen, dt = -1, (Profile(), Profile(), Profile())
     for idx, data in enumerate(tqdm(dataset)):
         with dt[0]:
-            real_image = data['image']
-            clothes = data['clothes']
+            real_image = data['image'].to(device)
+            clothes = data['clothes'].to(device)
             ##edge is extracted from the clothes image with the built-in function in python
-            edge = data['edge']
-            # egde = edge[edge > 0.5]
-            edge = torch.FloatTensor((edge.detach().numpy() > 0.5).astype(np.int64))
+            edge = data['edge'].to(device)
+            egde = edge[edge > 0.5]
+            # edge = torch.FloatTensor((edge.detach().numpy() > 0.5).astype(np.int64))
             clothes = clothes * edge        
 
         with dt[1]:
-            flow_out = warp_model(real_image.to(device), clothes.to(device))
+            flow_out = warp_model(real_image, clothes)
             warped_cloth, last_flow, = flow_out
-            warped_edge = F.grid_sample(edge.to(device), last_flow.permute(0, 2, 3, 1),
+            warped_edge = F.grid_sample(edge, last_flow.permute(0, 2, 3, 1),
                             mode='bilinear', padding_mode='zeros', align_corners=opt.align_corners)
 
         with dt[2]:
-            gen_inputs = torch.cat([real_image.to(device), warped_cloth, warped_edge], 1)
+            gen_inputs = torch.cat([real_image, warped_cloth, warped_edge], 1)
             # gen_inputs_clothes = torch.cat([warped_cloth, warped_edge], 1)
             # gen_inputs_persons = real_image.to(device)
             
@@ -102,7 +106,7 @@ with torch.no_grad():
             value_range=(-1,1),
         )
 
-        combine = torch.cat([real_image.float().to(device), clothes.to(device), warped_cloth.to(device), p_tryon], -1).squeeze()
+        combine = torch.cat([real_image.float(), clothes, warped_cloth, p_tryon], -1).squeeze()
         utils.save_image(
             combine,
             os.path.join(vis_path, p_name),
@@ -110,6 +114,9 @@ with torch.no_grad():
             normalize=True,
             value_range=(-1,1),
         )
+
+        if idx == 0:
+            flag[0] = True
             
     ############## FPS ##############
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -118,4 +125,4 @@ with torch.no_grad():
 
 
     st = tuple(x.t / seen * 1E3 for x in style_dt) 
-    print(f"Style: {st[0]:.2f}ms, style-f: {st[1]:.2f}ms, grid_sample: {st[3]:.2f}ms, refine: {st[4]:.2f}ms, offset: {st[5]:.2f}ms, cond_pyramids: {st[6]:.2f}ms, image_pyramids: {st[7]:.2f}ms")
+    print(f"Pre-style: {st[2]:.2f}ms, style: {st[0]:.2f}ms, style-f: {st[1]:.2f}ms, grid_sample: {st[3]:.2f}ms, refine: {st[4]:.2f}ms, offset: {st[5]:.2f}ms, cond_pyramids: {st[6]:.2f}ms, image_pyramids: {st[7]:.2f}ms")
