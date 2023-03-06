@@ -5,7 +5,7 @@ for type in "071"
 do
     python -q test_fs_pf.py \
     --name fs_"$type"_1 \
-    --gpu_ids 0 \
+    --gpu_ids 2 \
     --batchSize 1 --resize_or_crop None \
     --dataroot ../dataset/Flow-Style-VTON/VITON_test \
     --warp_checkpoint checkpoints/"$name"/PFAFN_warp_epoch_"$type".pth \
