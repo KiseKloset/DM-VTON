@@ -395,7 +395,7 @@ class AFlowNet(nn.Module):
                 torch.nn.Conv2d(in_channels=32, out_channels=2, kernel_size=3, stride=1, padding=1)
             )
 
-            style_block = StyledConvBlock(256, 49, latent_dim=256,
+            style_block = Styled_F_ConvBlock(256, 2, latent_dim=256,
                                          padding=padding_type, actvn=actvn,
                                          normalize_affine_output=normalize_mlp,
                                          modulated_conv=modulated_conv)

@@ -520,31 +520,17 @@ class AFWM(nn.Module):
         self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
 
         self.image_mobile = MobileNetV2_dynamicFPN()
-        self.image_stream = None
         self.cond_mobile = MobileNetV2_dynamicFPN()
-        self.cond_stream = None
         
 
     def forward(self, cond_input, image_input):
-        if self.image_stream is None:
-            self.image_stream = torch.cuda.Stream()
-
-        if self.cond_stream is None:
-            self.cond_stream = torch.cuda.Stream()
-
-        torch.cuda.synchronize()
-        with torch.cuda.stream(self.image_stream):
+        # image_pyramids = self.image_FPN(self.image_features(image_input))
+        with style_dt[-1]:
             image_pyramids = self.image_mobile(image_input)
 
-        with torch.cuda.stream(self.cond_stream):
+        # cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
+        with style_dt[-2]:
             cond_pyramids = self.cond_mobile(cond_input) # maybe use nn.Sequential
-        torch.cuda.synchronize()
-
-        # # image_pyramids = self.image_FPN(self.image_features(image_input))
-        # image_pyramids = self.image_mobile(image_input)
-
-        # # cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
-        # cond_pyramids = self.cond_mobile(cond_input) # maybe use nn.Sequential
 
         x_warp, last_flow = self.aflow_net(image_input, image_pyramids, cond_pyramids)
 
