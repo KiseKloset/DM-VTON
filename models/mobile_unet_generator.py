@@ -1,9 +1,11 @@
-import time
+import math
+
 import torch
 import torch.nn as nn
+from torch.nn.functional import interpolate
 
 
-def conv_bn(inp, oup, stride=1):
+def conv_bn(inp, oup, stride):
     return nn.Sequential(
         nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
         nn.BatchNorm2d(oup),
@@ -11,116 +13,213 @@ def conv_bn(inp, oup, stride=1):
     )
 
 
-def conv_dw(inp, oup, stride=1):
+def conv_1x1_bn(inp, oup):
     return nn.Sequential(
-        nn.Conv2d(inp, inp, 3, stride, 1, groups=inp, bias=False),
-        nn.BatchNorm2d(inp),
-        nn.ReLU6(inplace=True),
-
-        nn.Conv2d(inp, oup, 1, 1, bias=False),
+        nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
         nn.BatchNorm2d(oup),
-        nn.ReLU6(inplace=True),
+        nn.ReLU6(inplace=True)
     )
 
 
-class MobileNet(nn.Module):
-    def __init__(self, n_channels):
-        super(MobileNet, self).__init__()
-        self.layer1 = nn.Sequential(
-            conv_bn(n_channels, 32, 1),
-            conv_dw(32, 64, 1),
-            conv_dw(64, 128, 2),
-            conv_dw(128, 128, 1),
-            conv_dw(128, 256, 2),
-            conv_dw(256, 256, 1),
-        )
+class InvertedResidual(nn.Module):
+    def __init__(self, inp, oup, stride, expand_ratio):
+        super(InvertedResidual, self).__init__()
+        self.stride = stride
+        assert stride in [1, 2]
 
-        self.layer2 = nn.Sequential(
-            conv_dw(256, 512, 2),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-        )
+        hidden_dim = round(inp * expand_ratio)
+        self.use_res_connect = self.stride == 1 and inp == oup
 
-        self.layer3 = nn.Sequential(
-            conv_dw(512, 1024, 2),
-            conv_dw(1024, 1024, 1),
-        )
+        if expand_ratio == 1:
+            self.conv = nn.Sequential(
+                # dw
+                nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                nn.BatchNorm2d(hidden_dim),
+                nn.ReLU6(inplace=True),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(oup),
+            )
+        else:
+            self.conv = nn.Sequential(
+                # pw
+                nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(hidden_dim),
+                nn.ReLU6(inplace=True),
+                # dw
+                nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                nn.BatchNorm2d(hidden_dim),
+                nn.ReLU6(inplace=True),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(oup),
+            )
+
 
     def forward(self, x):
-        out0 = self.layer1(x)
-        out1 = self.layer2(out0)
-        out2 = self.layer3(out1)
-        return out0, out1, out2
+        if self.use_res_connect:
+            return x + self.conv(x)
+        else:
+            return self.conv(x)
 
 
-class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-    
-        self.double_conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
+class MobileNetV2(nn.Module):
+    def __init__(self, input_c = 3):
+        super(MobileNetV2, self).__init__()
+        block = InvertedResidual
+        input_channel = 32
+        last_channel = 512
+        interverted_residual_setting = [
+            # t, c, n, s
+            [1, 16, 1, 1],
+            [6, 24, 1, 2],
+            [6, 32, 1, 2],
+            [6, 64, 1, 2],
+            [6, 96, 1, 1],
+            [6, 160, 1, 2],
+            [6, 320, 1, 1],
+        ]
+
+        # building first layer
+        self.features = [conv_bn(input_c, input_channel, 2)]
+
+        # building inverted residual blocks
+        for t, c, n, s in interverted_residual_setting:
+            output_channel = c
+            for i in range(n):
+                if i == 0:
+                    self.features.append(block(input_channel, output_channel, s, expand_ratio=t))
+                else:
+                    self.features.append(block(input_channel, output_channel, 1, expand_ratio=t))
+                input_channel = output_channel
+
+        # building last several layers
+        self.features.append(conv_1x1_bn(input_channel, last_channel))
+
+        # make it nn.Sequential
+        self.features = nn.Sequential(*self.features)
+
+        self._initialize_weights()
+
 
     def forward(self, x):
-        return self.double_conv(x)
+        x = self.features(x)
+        x = x.mean(3).mean(2)
+        x = self.classifier(x)
+        return x
 
 
-class MobileNetUNet(nn.Module):
-    def __init__(self, n_channels, num_classes):
-        super(MobileNetUNet, self).__init__()
-        self.n_channels = n_channels
-        self.num_classes = num_classes
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+                if m.bias is not None:
+                    m.bias.data.zero_()
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+            elif isinstance(m, nn.Linear):
+                n = m.weight.size(1)
+                m.weight.data.normal_(0, 0.01)
+                m.bias.data.zero_()
 
-        self.backbone = MobileNet(n_channels)
 
-        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear')
-        self.conv1 = DoubleConv(1024, 512)
+class MobileNetV2_unet(nn.Module):
+    def __init__(self, input_c, output_c, mode='train'):
+        super(MobileNetV2_unet, self).__init__()
 
-        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear')
-        self.conv2 = DoubleConv(1024, 256)
+        self.mode = mode
+        self.backbone = MobileNetV2(input_c)
 
-        self.up3 = nn.Upsample(scale_factor=2, mode='bilinear')
-        self.conv3 = DoubleConv(512, 128)
+        self.dconv1 = nn.ConvTranspose2d(512, 96, 4, padding=1, stride=2)
+        self.invres1 = InvertedResidual(192, 96, 1, 6)
 
-        self.up4 = nn.Upsample(scale_factor=2, mode='bilinear')
-        self.conv4 = DoubleConv(128, 64)
+        self.dconv2 = nn.ConvTranspose2d(96, 32, 4, padding=1, stride=2)
+        self.invres2 = InvertedResidual(64, 32, 1, 6)
 
-        self.out = nn.Conv2d(64, num_classes, kernel_size=1)
+        self.dconv3 = nn.ConvTranspose2d(32, 24, 4, padding=1, stride=2)
+        self.invres3 = InvertedResidual(48, 24, 1, 6)
+
+        self.dconv4 = nn.ConvTranspose2d(24, 16, 4, padding=1, stride=2)
+        self.invres4 = InvertedResidual(32, 16, 1, 6)
+
+        self.conv_last = nn.Conv2d(16, output_c, kernel_size=3, stride=1, padding=1, bias=False)
+
+        self._init_weights()
+
 
     def forward(self, x):
-        x2, x1, x0 = self.backbone(x)
+        for n in range(0, 2):
+            x = self.backbone.features[n](x)
+        x1 = x
 
-        P5 = self.up1(x0)
-        P5 = self.conv1(P5)           
+        for n in range(2, 3):
+            x = self.backbone.features[n](x)
+        x2 = x
 
-        P4 = x1                       
-        P4 = torch.cat([P4, P5], axis=1)  
+        for n in range(3, 4):
+            x = self.backbone.features[n](x)
+        x3 = x
 
-        P4 = self.up2(P4)            
-        P4 = self.conv2(P4)          
-        P3 = x2                      
-        P3 = torch.cat([P4, P3], axis=1)
+        for n in range(4, 6):
+            x = self.backbone.features[n](x)
+        x4 = x
 
-        P3 = self.up3(P3)
-        P3 = self.conv3(P3)
+        for n in range(6, 9):
+            x = self.backbone.features[n](x)
+        x5 = x
 
-        P3 = self.up4(P3)
-        P3 = self.conv4(P3)
+        up1 = torch.cat([
+            x4,
+            self.dconv1(x)
+        ], dim=1)
+        up1 = self.invres1(up1)
 
-        out = self.out(P3)
-        return out
+        up2 = torch.cat([
+            x3,
+            self.dconv2(up1)
+        ], dim=1)
+        up2 = self.invres2(up2)
+
+        up3 = torch.cat([
+            x2,
+            self.dconv3(up2)
+        ], dim=1)
+        up3 = self.invres3(up3)
+
+        up4 = torch.cat([
+            x1,
+            self.dconv4(up3)
+        ], dim=1)
+        up4 = self.invres4(up4)
+
+        x = interpolate(up4, scale_factor=2, mode='nearest')
+
+        x = self.conv_last(x)
+
+        return x
+
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+                if m.bias is not None:
+                    m.bias.data.zero_()
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+            elif isinstance(m, nn.Linear):
+                m.weight.data.normal_(0, 0.01)
+                m.bias.data.zero_()
+
 
 if __name__ == "__main__":
+    import time
     device = torch.device("cuda:1")
-    net = MobileNetUNet(7, 4).to(device)
+    net = MobileNetV2_unet(7, 4).to(device)
     net.eval()
     x = torch.rand(1, 7, 256, 192).to(device)
     with torch.no_grad():

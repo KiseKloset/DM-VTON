@@ -1,6 +1,10 @@
-numpy==1.21.6
+cupy==11.6.0
+numpy==1.24.2
+pandas==1.5.3
+Pillow==9.4.0
+tensorboardX==2.6
+timm==0.6.12
 torch==1.13.1
 torchvision==0.14.1
-tqdm==4.64.1
-opencv-python==4.6.0
-tensorboardX==2.2
+tqdm==4.65.0
+opencvopencv-python==4.7.0.72

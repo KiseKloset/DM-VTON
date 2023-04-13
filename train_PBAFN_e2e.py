@@ -11,10 +11,12 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-from models.afwm import AFWM, TVLoss
+from models.afwm_pb import TVLoss
+from models.afwm_pb import AFWM as PBAFWM 
 from models.networks import ResUnetGenerator, VGGLoss
 from options.train_options import TrainOptions
 from utils.utils import load_checkpoint_parallel, save_checkpoint
+from data.dresscode_dataset import DressCodeDataset
 
 
 opt = TrainOptions().parse()
@@ -46,14 +48,15 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-train_data = CreateDataset(opt)
+# train_data = CreateDataset(opt)
+train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
 train_sampler = DistributedSampler(train_data)
 train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
                                                num_workers=16, pin_memory=True, sampler=train_sampler)
 
 dataset_size = len(train_loader)
 
-warp_model = AFWM(opt, 45)
+warp_model = PBAFWM(opt, 45)
 warp_model.train()
 warp_model.to(device)
 load_checkpoint_parallel(warp_model, opt.PBAFN_warp_checkpoint, device)
@@ -61,6 +64,7 @@ load_checkpoint_parallel(warp_model, opt.PBAFN_warp_checkpoint, device)
 gen_model = ResUnetGenerator(8, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
 gen_model.train()
 gen_model.to(device)
+load_checkpoint_parallel(gen_model, opt.PBAFN_gen_checkpoint, device)
 
 warp_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(warp_model).to(device)
 gen_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(gen_model).to(device)
@@ -169,17 +173,23 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         p_rendered, m_composite = torch.split(gen_outputs, [3, 1], 1)
         p_rendered = torch.tanh(p_rendered)
         m_composite = torch.sigmoid(m_composite)
-        m_composite1 = m_composite * warped_prod_edge
-        m_composite =  person_clothes_edge.to(device)*m_composite1
+        m_composite = m_composite * warped_prod_edge
+        # TUNGPNT2
+        # m_composite =  person_clothes_edge.to(device)*m_composite
         p_tryon = warped_cloth * m_composite + p_rendered * (1 - m_composite)
 
-        loss_mask_l1 = torch.mean(torch.abs(1 - m_composite))
+        # TUNGPNT2
+        # loss_mask_l1 = torch.mean(torch.abs(1 - m_composite))
+        # loss_l1 = criterionL1(p_tryon, real_image.to(device))
+        # loss_vgg = criterionVGG(p_tryon,real_image.to(device))
+        # bg_loss_l1 = criterionL1(p_rendered, real_image.to(device))
+        # bg_loss_vgg = criterionVGG(p_rendered, real_image.to(device))
+        # gen_loss = (loss_l1 * 5 + loss_vgg + bg_loss_l1 * 5 + bg_loss_vgg + loss_mask_l1)
+
+        loss_mask_l1 = criterionL1(person_clothes_edge.to(device), m_composite)
         loss_l1 = criterionL1(p_tryon, real_image.to(device))
         loss_vgg = criterionVGG(p_tryon,real_image.to(device))
-        bg_loss_l1 = criterionL1(p_rendered, real_image.to(device))
-        bg_loss_vgg = criterionVGG(p_rendered, real_image.to(device))
-        gen_loss = (loss_l1 * 5 + loss_vgg + bg_loss_l1 * 5 + bg_loss_vgg + loss_mask_l1)
-
+        gen_loss = (loss_l1 * 5 + loss_vgg + loss_mask_l1)
         loss_all = 0.5 * warp_loss + 1.0 * gen_loss
 
         train_warp_loss += warp_loss
@@ -205,7 +215,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
             g = preserve_region.to(device)
             h = torch.cat([dense_preserve_mask,dense_preserve_mask,dense_preserve_mask],1)
             i = p_rendered
-            j = torch.cat([m_composite1,m_composite1,m_composite1],1)
+            j = torch.cat([m_composite, m_composite, m_composite], 1)
             k = p_tryon
             combine = torch.cat([a[0],b[0],c[0],d[0],e[0],f[0],g[0],h[0],i[0],j[0],k[0]], 2).squeeze()
             cv_img = (combine.permute(1,2,0).detach().cpu().numpy()+1)/2

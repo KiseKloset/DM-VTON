@@ -57,9 +57,9 @@ class MobileNetV2_dynamicFPN(nn.Module):
             {'expansion_factor': 6, 'width_factor': 24, 'n': 1, 'stride': 2},
             {'expansion_factor': 6, 'width_factor': 32, 'n': 1, 'stride': 2},
             {'expansion_factor': 6, 'width_factor': 64, 'n': 1, 'stride': 2},
-            {'expansion_factor': 6, 'width_factor': 128, 'n': 1, 'stride': 2},
-            {'expansion_factor': 6, 'width_factor': 192, 'n': 1, 'stride': 2},
-            {'expansion_factor': 6, 'width_factor': 256, 'n': 1, 'stride': 1},
+            {'expansion_factor': 6, 'width_factor': 96, 'n': 1, 'stride': 2},
+            {'expansion_factor': 6, 'width_factor': 160, 'n': 1, 'stride': 2},
+            {'expansion_factor': 6, 'width_factor': 320, 'n': 1, 'stride': 1},
         ]
         self.inverted_residual_blocks = nn.ModuleList(
             [self._make_inverted_residual_block(**setting)
@@ -88,7 +88,7 @@ class MobileNetV2_dynamicFPN(nn.Module):
         # Smooth layers
         # n = lateral layers + 1 for top layer
         self.smooth_layers = nn.ModuleList([nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1)] *
-                                           (len(self.lateral_layers) + 1))
+                                           (len(self.lateral_layers)))
 
         self._initialize_weights()
 
@@ -166,8 +166,26 @@ class MobileNetV2_dynamicFPN(nn.Module):
         for lateral_tensor in lateral_tensors:
             m_layers.append(self._upsample_add(m_layers[-1], lateral_tensor))
 
+        m_layers = m_layers[1:]
+
         # smooth all m_layers
         assert len(self.smooth_layers) == len(m_layers)
         p_layers = [smooth_layer(m_layer) for smooth_layer, m_layer in zip(self.smooth_layers, m_layers)]
 
-        return p_layers[::-1][:-1]
+        return p_layers[::-1]
+
+
+if __name__ == "__main__":
+    import time
+    device = torch.device("cuda:0")
+    net = MobileNetV2_dynamicFPN().to(device)
+    net.eval()
+    x = torch.rand(1, 3, 256, 192).to(device)
+    with torch.no_grad():
+        out = net(x)
+        start = time.time()
+        for i in range(1000):
+            out = net(x)
+        end = time.time()
+    print([i.shape for i in out])
+    print((end - start) / 1000)

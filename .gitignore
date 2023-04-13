@@ -141,6 +141,5 @@ dmypy.json
 # Dataset, models
 images/
 dataset/
-data/
 pretrained/
 video/

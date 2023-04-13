@@ -3,6 +3,7 @@ import os
 from utils import utils
 import torch
 
+
 class BaseOptions():
     def __init__(self):
         self.parser = argparse.ArgumentParser()
@@ -29,7 +30,6 @@ class BaseOptions():
 
         # for setting inputs
         self.parser.add_argument('--dataroot', type=str,default='dataset/VITON_traindata/')
-        self.parser.add_argument('--valroot', type=str,default='dataset/VITON_valdata/')
         self.parser.add_argument('--resize_or_crop', type=str, default='scale_width', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')        
         self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation') 
@@ -40,7 +40,7 @@ class BaseOptions():
         self.parser.add_argument('--display_winsize', type=int, default=512,  help='display window size')
         self.parser.add_argument('--tf_log', action='store_true', help='if specified, use tensorboard logging. Requires tensorflow installed')
 
-        # for generator
+        # for model
         self.parser.add_argument('--netG', type=str, default='global', help='selects model to use for netG')
         self.parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         self.parser.add_argument('--n_downsample_global', type=int, default=4, help='number of downsampling layers in netG') 

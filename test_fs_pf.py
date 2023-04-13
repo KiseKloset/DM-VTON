@@ -10,14 +10,15 @@ from torchvision import utils
 from tqdm import tqdm
 
 from data.data_loader_test import CreateDataLoader
-from models.afwm_test import AFWM, style_dt
+from models.pfafn.afwm_test import AFWM, style_dt
+
 from models.networks import ResUnetGenerator
 from models.rmgn_generator import RMGNGenerator
 from options.test_options import TestOptions
 from utils.utils import load_checkpoint, Profile, flag
-
-from models.mobile_unet_generator import MobileNetUNet
-
+from models.mobile_unet_generator import MobileNetV2_unet
+from data.dresscode_dataset import DressCodeTestDataset
+from torch.utils.data import DataLoader
 
 
 opt = TestOptions().parse()
@@ -26,20 +27,23 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-data_loader = CreateDataLoader(opt)
-dataset = data_loader.load_data()
-dataset_size = len(data_loader)
+# data_loader = CreateDataLoader(opt)
+# dataloader = data_loader.load_data()
+dataset = DressCodeTestDataset(dataroot_path=opt.dataroot, phase='test', category=['upper_body'])
+dataloader = DataLoader(dataset, batch_size=opt.batchSize, shuffle=False, num_workers=16)
+
+dataset_size = len(dataloader)
 warp_model = AFWM(opt, 3)
 warp_model.eval()
 warp_model.to(device)
-# load_checkpoint(warp_model, opt.warp_checkpoint, device)
+load_checkpoint(warp_model, opt.warp_checkpoint, device)
 
 gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
-# gen_model = MobileNetUNet(7, 4)
+# gen_model = MobileNetV2_unet(7, 4)
 # gen_model = RMGNGenerator(multilevel=False, predmask=True)
 gen_model.eval()
 gen_model.to(device)
-# load_checkpoint(gen_model, opt.gen_checkpoint, device)
+load_checkpoint(gen_model, opt.gen_checkpoint, device)
 
 total_steps = (start_epoch-1) * dataset_size + epoch_iter
 step = 0
@@ -54,13 +58,13 @@ os.makedirs(warp_path, exist_ok=True)
 os.makedirs(vis_path, exist_ok=True)
 with torch.no_grad():
     seen, dt = -1, (Profile(), Profile(), Profile())
-    for idx, data in enumerate(tqdm(dataset)):
+    for idx, data in enumerate(tqdm(dataloader)):
         with dt[0]:
             real_image = data['image'].to(device)
             clothes = data['clothes'].to(device)
             ##edge is extracted from the clothes image with the built-in function in python
             edge = data['edge'].to(device)
-            egde = edge[edge > 0.5]
+            edge = (edge > 0.5).float()
             # edge = torch.FloatTensor((edge.detach().numpy() > 0.5).astype(np.int64))
             clothes = clothes * edge        
 

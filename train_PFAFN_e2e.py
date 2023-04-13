@@ -11,11 +11,15 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-from models.afwm import AFWM, TVLoss 
+from models.afwm import TVLoss 
+from models.pfafn.afwm import AFWM 
+from models.afwm_pb import AFWM as PBAFWM 
 from models.networks import ResUnetGenerator, VGGLoss
 from models.rmgn_generator import RMGNGenerator
 from options.train_options import TrainOptions
 from utils.utils import load_checkpoint_parallel, save_checkpoint
+from models.mobile_unet_generator import MobileNetV2_unet
+from data.dresscode_dataset import DressCodeDataset
 
 
 opt = TrainOptions().parse()
@@ -47,7 +51,8 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-train_data = CreateDataset(opt)
+# train_data = CreateDataset(opt)
+train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
 train_sampler = DistributedSampler(train_data)
 train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
                           num_workers=16, pin_memory=True, sampler=train_sampler)
@@ -58,12 +63,13 @@ PF_warp_model.train()
 PF_warp_model.to(device)
 load_checkpoint_parallel(PF_warp_model, opt.PFAFN_warp_checkpoint, device)
 
-# PF_gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
-PF_gen_model = RMGNGenerator(multilevel=False, predmask=True)
+PF_gen_model = ResUnetGenerator(7, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
+# PF_gen_model = MobileNetV2_unet(7, 4)
 PF_gen_model.train()
 PF_gen_model.to(device)
+load_checkpoint_parallel(PF_gen_model, opt.PFAFN_gen_checkpoint, device)
 
-PB_warp_model = AFWM(opt, 45)
+PB_warp_model = PBAFWM(opt, 45)
 PB_warp_model.eval()
 PB_warp_model.to(device)
 load_checkpoint_parallel(PB_warp_model, opt.PBAFN_warp_checkpoint, device)
@@ -228,31 +234,44 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         skin_mask = warped_prod_edge_un.detach() * (1 - person_clothes_edge.to(device))
 
-        # gen_inputs = torch.cat([p_tryon_un.detach(), warped_cloth, warped_prod_edge], 1)
-        gen_inputs_clothes = torch.cat([warped_cloth, warped_prod_edge], 1)
-        gen_inputs_persons = p_tryon_un.detach()
-        
-        gen_outputs, out_L1, out_L2, M_list = PF_gen_model(gen_inputs_persons, gen_inputs_clothes)
+        gen_inputs = torch.cat([p_tryon_un.detach(), warped_cloth, warped_prod_edge], 1)
+        gen_outputs = PF_gen_model(gen_inputs)
+        # gen_inputs_clothes = torch.cat([warped_cloth, warped_prod_edge], 1)
+        # gen_inputs_persons = p_tryon_un.detach()
+        # gen_outputs, out_L1, out_L2, M_list = PF_gen_model(gen_inputs_persons, gen_inputs_clothes)
 
         p_rendered, m_composite = torch.split(gen_outputs, [3, 1], 1)
         p_rendered = torch.tanh(p_rendered)
         m_composite = torch.sigmoid(m_composite)
-        m_composite1 = m_composite * warped_prod_edge
-        m_composite = person_clothes_edge.to(device) * m_composite1
+        m_composite = m_composite * warped_prod_edge
+        # TUNGPNT2
+        # m_composite =  person_clothes_edge.to(device)*m_composite
         p_tryon = warped_cloth * m_composite + p_rendered * (1 - m_composite)
 
-        loss_mask_l1 = torch.mean(torch.abs(1 - m_composite))
-        loss_l1_skin = criterionL1(p_rendered * skin_mask, skin_mask * real_image.to(device))
-        loss_vgg_skin = criterionVGG(p_rendered * skin_mask, skin_mask * real_image.to(device))
+        # TUNGPNT2
+        # loss_mask_l1 = torch.mean(torch.abs(1 - m_composite))
+        # loss_l1_skin = criterionL1(p_rendered * skin_mask, skin_mask * real_image.to(device))
+        # loss_vgg_skin = criterionVGG(p_rendered * skin_mask, skin_mask * real_image.to(device))
+        # loss_l1 = criterionL1(p_tryon, real_image.to(device))
+        # loss_vgg = criterionVGG(p_tryon, real_image.to(device))
+        # bg_loss_l1 = criterionL1(p_rendered, real_image.to(device))
+        # bg_loss_vgg = criterionVGG(p_rendered, real_image.to(device))
+
+        loss_mask_l1 = criterionL1(person_clothes_edge.to(device), m_composite)
+        loss_l1_skin = criterionL1(p_tryon * skin_mask, skin_mask * real_image.to(device))
+        loss_vgg_skin = criterionVGG(p_tryon * skin_mask, skin_mask * real_image.to(device))
         loss_l1 = criterionL1(p_tryon, real_image.to(device))
         loss_vgg = criterionVGG(p_tryon, real_image.to(device))
-        bg_loss_l1 = criterionL1(p_rendered, real_image.to(device))
-        bg_loss_vgg = criterionVGG(p_rendered, real_image.to(device))
+
+        # if epoch < opt.niter:
+        #     loss_gen = (loss_l1 * 5 + loss_l1_skin * 30 + loss_vgg + loss_vgg_skin * 2 + bg_loss_l1 * 5 + bg_loss_vgg + 1 * loss_mask_l1)
+        # else:
+        #     loss_gen = (loss_l1 * 5 + loss_l1_skin * 60 + loss_vgg + loss_vgg_skin * 4 + bg_loss_l1 * 5 + bg_loss_vgg + 1 * loss_mask_l1)
 
         if epoch < opt.niter:
-            loss_gen = (loss_l1 * 5 + loss_l1_skin * 30 + loss_vgg + loss_vgg_skin * 2 + bg_loss_l1 * 5 + bg_loss_vgg + 1 * loss_mask_l1)
+            loss_gen = (loss_l1 * 5 + loss_l1_skin * 30 + loss_vgg + loss_vgg_skin * 2 + 1 * loss_mask_l1)
         else:
-            loss_gen = (loss_l1 * 5 + loss_l1_skin * 60 + loss_vgg + loss_vgg_skin * 4 + bg_loss_l1 * 5 + bg_loss_vgg + 1 * loss_mask_l1)
+            loss_gen = (loss_l1 * 5 + loss_l1_skin * 60 + loss_vgg + loss_vgg_skin * 4 + 1 * loss_mask_l1)
 
         loss_all = 0.25 * loss_warp + loss_gen
 
@@ -277,7 +296,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
                 e = torch.cat([skin_mask.to(device), skin_mask.to(device), skin_mask.to(device)], 1)
                 f = warped_cloth
                 g = p_rendered
-                h = torch.cat([m_composite1, m_composite1, m_composite1], 1)
+                h = torch.cat([m_composite, m_composite, m_composite], 1)
                 i = p_tryon
                 combine = torch.cat([a[0], b[0], c[0], d[0], e[0], f[0], g[0], h[0], i[0]], 2).squeeze()
                 cv_img = (combine.permute(1, 2, 0).detach().cpu().numpy() + 1) / 2

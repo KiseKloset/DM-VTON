@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-import time
 
 
 class InvertedResidual(nn.Module):
@@ -32,9 +31,10 @@ class InvertedResidual(nn.Module):
 
     def forward(self, x):
         if self.use_res_connect:
-            return x + self.conv(x)
+            out = x + self.conv(x)
         else:
-            return self.conv(x)
+            out = self.conv(x)
+        return out
 
 
 class MobileNetV2_dynamicFPN(nn.Module):
@@ -46,20 +46,20 @@ class MobileNetV2_dynamicFPN(nn.Module):
 
         # First layer
         self.first_layer = nn.Sequential(
-            nn.Conv2d(3, self.input_channel, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv2d(3, self.input_channel, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(self.input_channel),
             nn.ReLU6(inplace=True)
         )
 
         # Inverted residual blocks (each n layers)
         self.inverted_residual_setting = [
-            {'expansion_factor': 6, 'width_factor': 16, 'n': 1, 'stride': 2},
-            {'expansion_factor': 6, 'width_factor': 24, 'n': 2, 'stride': 2},
-            {'expansion_factor': 6, 'width_factor': 32, 'n': 3, 'stride': 2},
-            # {'expansion_factor': 6, 'width_factor': 64, 'n': 4, 'stride': 2},
-            # {'expansion_factor': 6, 'width_factor': 96, 'n': 3, 'stride': 1},
-            # {'expansion_factor': 6, 'width_factor': 160, 'n': 3, 'stride': 2},
-            # {'expansion_factor': 6, 'width_factor': 320, 'n': 1, 'stride': 1},
+            {'expansion_factor': 1, 'width_factor': 16, 'n': 1, 'stride': 1},
+            {'expansion_factor': 6, 'width_factor': 24, 'n': 1, 'stride': 2},
+            {'expansion_factor': 6, 'width_factor': 32, 'n': 1, 'stride': 2},
+            {'expansion_factor': 6, 'width_factor': 64, 'n': 1, 'stride': 2},
+            {'expansion_factor': 6, 'width_factor': 128, 'n': 1, 'stride': 2},
+            {'expansion_factor': 6, 'width_factor': 192, 'n': 1, 'stride': 2},
+            {'expansion_factor': 6, 'width_factor': 256, 'n': 1, 'stride': 1},
         ]
         self.inverted_residual_blocks = nn.ModuleList(
             [self._make_inverted_residual_block(**setting)
@@ -88,7 +88,7 @@ class MobileNetV2_dynamicFPN(nn.Module):
         # Smooth layers
         # n = lateral layers + 1 for top layer
         self.smooth_layers = nn.ModuleList([nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1)] *
-                                           (len(self.lateral_layers) + 1))
+                                           (len(self.lateral_layers)))
 
         self._initialize_weights()
 
@@ -160,20 +160,24 @@ class MobileNetV2_dynamicFPN(nn.Module):
 
         # connect m_layer with previous m_layer and lateral layers recursively
         m_layers = [self.top_layer(x)]
+
         # reverse lateral tensor order for top down
         lateral_tensors.reverse()
         for lateral_tensor in lateral_tensors:
             m_layers.append(self._upsample_add(m_layers[-1], lateral_tensor))
 
+        m_layers = m_layers[1:]
+
         # smooth all m_layers
         assert len(self.smooth_layers) == len(m_layers)
         p_layers = [smooth_layer(m_layer) for smooth_layer, m_layer in zip(self.smooth_layers, m_layers)]
 
-        return p_layers
+        return p_layers[::-1]
 
 
 if __name__ == "__main__":
-    device = torch.device("cuda:1")
+    import time
+    device = torch.device("cuda:0")
     net = MobileNetV2_dynamicFPN().to(device)
     net.eval()
     x = torch.rand(1, 3, 256, 192).to(device)

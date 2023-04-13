@@ -5,7 +5,7 @@ import numpy as np
 from math import sqrt
 from utils.utils import Profile
 
-from models.mobile_unet_extractor import MobileNetV2_dynamicFPN
+from models.mobile_unet_extractor_test import MobileNetV2_dynamicFPN
 
 
 style_dt = (Profile(), Profile(), Profile(), Profile(), Profile(), Profile(), Profile(), Profile())
@@ -412,7 +412,7 @@ class AFlowNet(nn.Module):
 
         self.netStyle = []
 
-        self.netF = []
+        # self.netF = []
 
         for i in range(num_pyramid):
 
@@ -426,7 +426,7 @@ class AFlowNet(nn.Module):
                 torch.nn.Conv2d(in_channels=32, out_channels=2, kernel_size=3, stride=1, padding=1)
             )
 
-            style_block = Styled_F_ConvBlock(256, 2, latent_dim=256,
+            style_block = StyledConvBlock(256, 49, latent_dim=256,
                                          padding=padding_type, actvn=actvn,
                                          normalize_affine_output=normalize_mlp,
                                          modulated_conv=modulated_conv)
@@ -439,12 +439,12 @@ class AFlowNet(nn.Module):
 
             self.netRefine.append(netRefine_layer)
             self.netStyle.append(style_block)
-            self.netF.append(style_F_block)
+            # self.netF.append(style_F_block)
 
 
         self.netRefine = nn.ModuleList(self.netRefine)
         self.netStyle = nn.ModuleList(self.netStyle)
-        self.netF = nn.ModuleList(self.netF)
+        # self.netF = nn.ModuleList(self.netF)
 
         self.cond_style = torch.nn.Sequential(torch.nn.Conv2d(256, 128, kernel_size=(8,6), stride=1, padding=0), torch.nn.LeakyReLU(inplace=False, negative_slope=0.1))
 
@@ -513,10 +513,10 @@ class AFWM(nn.Module):
     def __init__(self, opt, input_nc):
         super(AFWM, self).__init__()
         num_filters = [64,128,256,256,256]
-        self.image_features = FeatureEncoder(3, num_filters) 
-        self.cond_features = FeatureEncoder(input_nc, num_filters)
-        self.image_FPN = RefinePyramid(num_filters)
-        self.cond_FPN = RefinePyramid(num_filters)
+        # self.image_features = FeatureEncoder(3, num_filters) 
+        # self.cond_features = FeatureEncoder(input_nc, num_filters)
+        # self.image_FPN = RefinePyramid(num_filters)
+        # self.cond_FPN = RefinePyramid(num_filters)
         self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
 
         self.image_mobile = MobileNetV2_dynamicFPN()
@@ -528,9 +528,9 @@ class AFWM(nn.Module):
         with style_dt[-1]:
             image_pyramids = self.image_mobile(image_input)
 
-        # cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
+        # cond_pyramids = self.cond_FPN(self.cond_features(cond_input))
         with style_dt[-2]:
-            cond_pyramids = self.cond_mobile(cond_input) # maybe use nn.Sequential
+            cond_pyramids = self.cond_mobile(cond_input)
 
         x_warp, last_flow = self.aflow_net(image_input, image_pyramids, cond_pyramids)
 

@@ -11,10 +11,12 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-from models.afwm import AFWM, TVLoss 
+from models.afwm_pb import TVLoss 
+from models.afwm_pb import AFWM as PBAFWM 
 from models.networks import VGGLoss
 from options.train_options import TrainOptions
 from utils.utils import save_checkpoint
+from data.dresscode_dataset import DressCodeDataset
 
 
 opt = TrainOptions().parse()
@@ -45,7 +47,9 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-train_data = CreateDataset(opt) 
+# opt.dataroot = '../dataset/Flow-Style-VTON/VITON_traindata'
+# train_data = CreateDataset(opt) 
+train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
 train_sampler = DistributedSampler(train_data)
 train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
                                                num_workers=16, pin_memory=True, sampler=train_sampler)
@@ -53,7 +57,7 @@ train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
 
 dataset_size = len(train_loader)
 
-warp_model = AFWM(opt, 45)
+warp_model = PBAFWM (opt, 45)
 warp_model.train()
 warp_model.to(device)
 warp_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(warp_model).to(device)
@@ -112,8 +116,6 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         preserve_mask = torch.cat([face_mask,other_clothes_mask],1)
         concat = torch.cat([preserve_mask.to(device),densepose,pose.to(device)],1)
 
-        #import ipdb; ipdb.set_trace()
-
         flow_out = model(concat.to(device), clothes.to(device), pre_clothes_edge.to(device))
         warped_cloth, last_flow, _1, _2, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = flow_out
         warped_prod_edge = x_edge_all[4]
@@ -138,9 +140,6 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         loss_all = 0.01 * loss_smooth + loss_all
         train_loss += loss_all
-
-        # if opt.local_rank == 0:
-        #   writer.add_scalar('loss_all', loss_all, step)
 
         optimizer_warp.zero_grad()
         loss_all.backward()

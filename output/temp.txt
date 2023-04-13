@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
+    pytorch_fid.fid_score.main()
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
+    fid_value = calculate_fid_given_paths(args.path,
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 257, in calculate_fid_given_paths
+    model = InceptionV3([block_idx]).to(device)
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 989, in to
+    return self._apply(convert)
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
+    module._apply(fn)
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
+    module._apply(fn)
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
+    module._apply(fn)
+  [Previous line repeated 1 more time]
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 664, in _apply
+    param_applied = fn(param)
+  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 987, in convert
+    return t.to(device, dtype if t.is_floating_point() or t.is_complex() else None, non_blocking)
+KeyboardInterrupt

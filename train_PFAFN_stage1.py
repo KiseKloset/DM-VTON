@@ -11,11 +11,13 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-from models.afwm import AFWM, TVLoss 
+from models.afwm import TVLoss 
+from models.pfafn.afwm import AFWM 
 from models.afwm_pb import AFWM as PBAFWM 
 from models.networks import ResUnetGenerator, VGGLoss
 from options.train_options import TrainOptions
 from utils.utils import load_checkpoint_parallel, load_checkpoint_part_parallel, save_checkpoint
+from data.dresscode_dataset import DressCodeDataset
 
 
 opt = TrainOptions().parse()
@@ -47,7 +49,8 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-train_data = CreateDataset(opt)
+# train_data = CreateDataset(opt)
+train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
 train_sampler = DistributedSampler(train_data)
 train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
                           num_workers=16, pin_memory=True, sampler=train_sampler)
@@ -57,7 +60,8 @@ print('#training images = %d' % dataset_size)
 PF_warp_model = AFWM(opt, 3)
 PF_warp_model.train()
 PF_warp_model.to(device)
-#load_checkpoint_part_parallel(PF_warp_model, opt.PBAFN_warp_checkpoint, device)
+# load_checkpoint_part_parallel(PF_warp_model, opt.PBAFN_warp_checkpoint)
+load_checkpoint_parallel(PF_warp_model, opt.PFAFN_warp_checkpoint, device)
 
 PB_warp_model = PBAFWM(opt, 45)
 PB_warp_model.eval()
@@ -84,11 +88,11 @@ criterionL2 = nn.MSELoss('sum')
 params = [p for p in PF_warp_model.parameters()]
 optimizer = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, 0.999))
 
-params_part = []
-for name, param in PF_warp_model.named_parameters():
-    if 'cond_' in name or 'aflow_net.netRefine' in name and 'aflow_net.cond_style' not in name:
-        params_part.append(param)
-optimizer_part = torch.optim.Adam(params_part, lr=opt.lr, betas=(opt.beta1, 0.999))
+# params_part = []
+# for name, param in PF_warp_model.named_parameters():
+#     if 'cond_' in name or 'aflow_net.netRefine' in name and 'aflow_net.cond_style' not in name:
+#         params_part.append(param)
+# optimizer_part = torch.optim.Adam(params_part, lr=opt.lr, betas=(opt.beta1, 0.999))
 
 total_steps = (start_epoch - 1) * dataset_size + epoch_iter
 
@@ -224,7 +228,8 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         train_fea_loss += loss_fea_sup_all
         train_flow_loss += loss_flow_sup_all
 
-        if epoch < opt.niter:
+        # if epoch < opt.niter:
+        if False:
             optimizer_part.zero_grad()
             loss_all.backward()
             optimizer_part.step()
@@ -264,7 +269,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         now = time_stamp.strftime('%Y.%m.%d-%H:%M:%S')
         if step % 100 == 0:
             if opt.local_rank == 0:
-                print('{}:{}:[step-{}/{}: {:.2%}]--[loss_all-{:.6f}]--[loss_fea-{:.6f}]--[loss_flow-{:.6f}]--[lrpf-{:.6f}]--[ETA-{}]'.format(
+                print('{}:{}:[step-{}/{}: {:.2%}]--[loss_all-{:.6f}]--[loss_fea-{:.6f}]--[loss_flow-{:.6f}]--[lr: pf-{:.6f}]--[ETA-{}]'.format(
                                                                                now, epoch_iter,
                                                                                step, all_steps, step/all_steps, 
                                                                                loss_all, loss_fea_sup_all, loss_flow_sup_all, 

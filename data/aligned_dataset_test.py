@@ -28,7 +28,7 @@ class AlignedDataset(BaseDataset):
         self.e_name = []
         self.get_file_name()
         #import ipdb; ipdb.set_trace()
-        self.dataset_size = len(self.im_name) // 5
+        self.dataset_size = len(self.im_name)
 
     def get_file_name(self):
 
@@ -62,7 +62,13 @@ class AlignedDataset(BaseDataset):
         E = Image.open(E_path).convert('L')
         E_tensor = transform_E(E)
 
-        input_dict = { 'image': I_tensor,'clothes': C_tensor, 'edge': E_tensor, 'p_name':self.im_name[index].split('/')[-1], 'c_name':self.c_name[index].split('/')[-1]}
+        input_dict = { 
+            'image': I_tensor,
+            'clothes': C_tensor, 
+            'edge': E_tensor, 
+            'p_name':self.im_name[index].split('/')[-1], 
+            'c_name':self.c_name[index].split('/')[-1]
+        }
         return input_dict
 
     def __len__(self):
