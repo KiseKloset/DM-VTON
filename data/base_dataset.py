@@ -87,7 +87,10 @@ def normalize():
     return transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
 def __make_power_2(img, base, method=Image.BICUBIC):
-    ow, oh = img.size        
+    try:
+        ow, oh = img.size # PIL
+    except:
+        oh, ow = img.shape # numpy      
     h = int(round(oh / base) * base)
     w = int(round(ow / base) * base)
     if (h == oh) and (w == ow):
@@ -95,7 +98,10 @@ def __make_power_2(img, base, method=Image.BICUBIC):
     return img.resize((w, h), method)
 
 def __scale_width(img, target_width, method=Image.BICUBIC):
-    ow, oh = img.size
+    try:
+        ow, oh = img.size # PIL
+    except:
+        oh, ow = img.shape # numpy   
     if (ow == target_width):
         return img    
     w = target_width
@@ -103,7 +109,10 @@ def __scale_width(img, target_width, method=Image.BICUBIC):
     return img.resize((w, h), method)
 
 def __crop(img, pos, size):
-    ow, oh = img.size
+    try:
+        ow, oh = img.size # PIL
+    except:
+        oh, ow = img.shape # numpy   
     x1, y1 = pos
     tw = th = size
     if (ow > tw or oh > th):        
