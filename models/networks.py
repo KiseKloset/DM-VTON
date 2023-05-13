@@ -3,7 +3,6 @@ import os
 import torch
 import torch.nn as nn
 from torchvision import models
-from options.train_options import TrainOptions
 
 
 class ResidualBlock(nn.Module):

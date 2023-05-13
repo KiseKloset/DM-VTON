@@ -3,9 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from math import sqrt
-from options.train_options import TrainOptions
-opt = TrainOptions().parse()
-
 
 
 def apply_offset(offset):
@@ -528,8 +525,7 @@ class AFWM(nn.Module):
 
         return x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
 
-
-    def update_learning_rate(self,optimizer):
+    def update_learning_rate(self, optimizer):
         lrd = opt.lr / opt.niter_decay
         lr = self.old_lr - lrd
         for param_group in optimizer.param_groups:
@@ -538,7 +534,7 @@ class AFWM(nn.Module):
             print('update learning rate: %f -> %f' % (self.old_lr, lr))
         self.old_lr = lr
 
-    def update_learning_rate_warp(self,optimizer):
+    def update_learning_rate_warp(self, optimizer):
         lrd = 0.2 * opt.lr / opt.niter_decay
         lr = self.old_lr_warp - lrd
         for param_group in optimizer.param_groups:

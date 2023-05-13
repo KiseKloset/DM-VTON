@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from math import sqrt
-from options.train_options import TrainOptions
-opt = TrainOptions().parse()
 
 from models.mobile_unet_extractor import MobileNetV2_dynamicFPN
 

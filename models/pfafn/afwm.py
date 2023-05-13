@@ -4,9 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from .correlation import correlation # the custom cost volume layer
 from models.mobile_unet_extractor import MobileNetV2_dynamicFPN
-from options.train_options import TrainOptions
 
-opt = TrainOptions().parse()
 
 def apply_offset(offset):
     sizes = list(offset.size()[2:])
