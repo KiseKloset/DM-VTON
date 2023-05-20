@@ -200,7 +200,7 @@ class AFlowNet(nn.Module):
 
 class AFWM(nn.Module):
 
-    def __init__(self, opt, input_nc):
+    def __init__(self, input_nc, align_corners):
         super(AFWM, self).__init__()
         num_filters = [64,128,256,256,256]
         # self.image_features = FeatureEncoder(3, num_filters) 
@@ -210,7 +210,7 @@ class AFWM(nn.Module):
 
         self.image_mobile = MobileNetV2_dynamicFPN()
         self.cond_mobile = MobileNetV2_dynamicFPN()
-        self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
+        self.aflow_net = AFlowNet(len(num_filters), align_corners=align_corners)
 
     def forward(self, cond_input, image_input):
         with style_dt[-2]:

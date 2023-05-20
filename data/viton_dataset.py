@@ -122,9 +122,9 @@ class LoadVITONDataset(Dataset):
             }
         else:
             return {
-                'image': im,
-                'clothes': cloth, 
-                'edge': cloth_edge, 
+                'image': img_tensor,
+                'color': cloth_tensor, 
+                'edge': cloth_edge_tensor, 
                 'p_name': im_name, 
                 'c_name': c_name,
             }

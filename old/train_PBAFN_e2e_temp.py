@@ -11,9 +11,10 @@ import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
-from models.afwm_pb import TVLoss
+from models.losses.tv_loss import TVLoss
+from models.losses.vgg_loss import VGGLoss
 from models.afwm_pb import AFWM as PBAFWM
-from models.networks import ResUnetGenerator, VGGLoss
+from models.networks import ResUnetGenerator
 from options.train_options import TrainOptions
 from utils.utils import load_checkpoint_parallel, save_checkpoint
 from data.dresscode_dataset import DressCodeDataset
@@ -215,7 +216,7 @@ train_loader = DataLoader(
 
 dataset_size = len(train_loader)
 
-warp_model = PBAFWM(opt, 45)
+warp_model = PBAFWM(45, opt.align_corners)
 warp_model.train()
 warp_model.to(device)
 load_checkpoint_parallel(warp_model, opt.PBAFN_warp_checkpoint, device)
@@ -253,8 +254,13 @@ if opt.local_rank == 0:
 
 all_steps = dataset_size * (opt.niter + opt.niter_decay + 1 - start_epoch)
 
-# for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
-for epoch in range(3):
+tracemalloc.start()
+pre_iter_snapshot = None
+pre_run_snapshot = None
+first_snapshot = tracemalloc.take_snapshot()
+
+
+for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     epoch_start_time = time.time()
     if epoch != start_epoch:
         epoch_iter = epoch_iter % dataset_size
@@ -263,6 +269,15 @@ for epoch in range(3):
     train_gen_loss = 0
 
     for i, data in enumerate(train_loader):
+        if pre_iter_snapshot is not None and i % 100 == 0:
+            curr_iter_snapshot = tracemalloc.take_snapshot()
+            iter_stats = curr_iter_snapshot.compare_to(pre_iter_snapshot, "lineno")
+            print(f"------------------------------Start profile iter {i}---------------------------------")
+            for stat in iter_stats[:5]:
+                print(stat)
+            print(f"------------------------------Stop profile iter {i}---------------------------------")
+        
+
         iter_start_time = time.time()
 
         total_steps += 1
@@ -281,6 +296,14 @@ for epoch in range(3):
             criterionVGG,
             writer,
         )
+        if pre_run_snapshot is not None and i % 100 == 0:
+            curr_run_snapshot = tracemalloc.take_snapshot()
+            run_stats = curr_run_snapshot.compare_to(pre_run_snapshot, "lineno")
+            print(f"------------------------------Start profile run {i}---------------------------------")
+            for stat in run_stats[:5]:
+                print(stat)
+            print(f"------------------------------Stop profile run {i}---------------------------------")
+        pre_run_snapshot = tracemalloc.take_snapshot()
 
         train_warp_loss += warp_loss
         train_gen_loss += gen_loss
@@ -321,6 +344,9 @@ for epoch in range(3):
 
         if epoch_iter >= dataset_size:
             break
+        
+        pre_iter_snapshot = tracemalloc.take_snapshot()
+
 
     # Visualize train loss
     train_warp_loss /= len(train_loader)
@@ -369,3 +395,10 @@ for epoch in range(3):
     if epoch > opt.niter:
         model.module.update_learning_rate_warp(optimizer_warp)
         model.module.update_learning_rate(optimizer_gen)
+
+    epoch_snapshot = tracemalloc.take_snapshot()
+    stats = epoch_snapshot.compare_to(first_snapshot, "lineno")
+    print(f"------------------------------Start profile epoch {epoch}---------------------------------")
+    for stat in stats[:5]:
+        print(stat)
+    print(f"------------------------------Stop profile epoch {epoch}---------------------------------")

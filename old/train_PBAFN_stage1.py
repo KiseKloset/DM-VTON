@@ -9,13 +9,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
 
-from models.afwm_pb import TVLoss 
+from models.losses.tv_loss import TVLoss
+from models.losses.vgg_loss import VGGLoss
 from models.afwm_pb import AFWM as PBAFWM 
-from models.networks import VGGLoss
 from options.train_options import TrainOptions
 from utils.utils import save_checkpoint
+from data.viton_dataset import LoadVITONDataset
 from data.dresscode_dataset import DressCodeDataset
 
 
@@ -25,36 +25,23 @@ os.makedirs(path,exist_ok=True)
 os.makedirs(opt.checkpoints_dir,exist_ok=True)
 
 
-def CreateDataset(opt, phase='train'):
-    #training with augumentation
-    #from data.aligned_dataset import AlignedDataset_aug
-    #dataset = AlignedDataset_aug()
-    from data.aligned_dataset import AlignedDataset
-    dataset = AlignedDataset()
-    val = True if phase=='val' else False
-    dataset.initialize(opt, val=val)
-    return dataset
-
 os.makedirs('sample',exist_ok=True)
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
 
 torch.cuda.set_device(opt.gpu_ids[0])
 torch.distributed.init_process_group(
-    'nccl',
+    'nccl', 
     init_method='env://'
 )
 device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-# opt.dataroot = '../dataset/Flow-Style-VTON/VITON_traindata'
-# train_data = CreateDataset(opt) 
-train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
-train_sampler = DistributedSampler(train_data)
-train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
-                                               num_workers=16, pin_memory=True, sampler=train_sampler)
+# train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
+train_data = LoadVITONDataset(path=opt.dataroot, phase='train', size=(256, 192))
+train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=True, num_workers=16)
 
-
+    
 dataset_size = len(train_loader)
 
 warp_model = PBAFWM (opt, 45)
@@ -86,7 +73,6 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
     train_loss = 0
 
-    train_sampler.set_epoch(epoch)
     for i, data in enumerate(train_loader):
         iter_start_time = time.time()
 

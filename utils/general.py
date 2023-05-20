@@ -80,6 +80,12 @@ def increment_path(path: str, exist_ok: bool = False, sep: str = '') -> Path:
     return path
 
 
+def warm_up(model, dummy_input):
+    with torch.no_grad():
+        for _ in range(10):
+            _ = model(dummy_input)
+
+
 def print_log(log_path, content, to_print=True):
     with open(log_path, 'a') as f:
       f.write(content)
@@ -87,3 +93,5 @@ def print_log(log_path, content, to_print=True):
 
     if to_print:
         print(content)
+
+    

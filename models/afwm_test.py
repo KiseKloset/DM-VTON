@@ -24,13 +24,6 @@ def apply_offset(offset):
     return torch.stack(grid_list, dim=-1)
 
 
-def TVLoss(x):
-    tv_h = x[:, :, 1:, :] - x[:, :, :-1, :]
-    tv_w = x[:, :, :, 1:] - x[:, :, :, :-1]
-
-    return torch.mean(torch.abs(tv_h)) + torch.mean(torch.abs(tv_w))
-
-
 # backbone 
 class EqualLR:
     def __init__(self, name):
@@ -510,14 +503,14 @@ class AFlowNet(nn.Module):
 
 class AFWM(nn.Module):
 
-    def __init__(self, opt, input_nc):
+    def __init__(self, input_nc, align_corners):
         super(AFWM, self).__init__()
         num_filters = [64,128,256,256,256]
         # self.image_features = FeatureEncoder(3, num_filters) 
         # self.cond_features = FeatureEncoder(input_nc, num_filters)
         # self.image_FPN = RefinePyramid(num_filters)
         # self.cond_FPN = RefinePyramid(num_filters)
-        self.aflow_net = AFlowNet(len(num_filters), align_corners=opt.align_corners)
+        self.aflow_net = AFlowNet(len(num_filters), align_corners=align_corners)
 
         self.image_mobile = MobileNetV2_dynamicFPN()
         self.cond_mobile = MobileNetV2_dynamicFPN()
@@ -536,21 +529,20 @@ class AFWM(nn.Module):
 
         return x_warp, last_flow
 
+    # def update_learning_rate(self,optimizer):
+    #     lrd = opt.lr / opt.niter_decay
+    #     lr = self.old_lr - lrd
+    #     for param_group in optimizer.param_groups:
+    #         param_group['lr'] = lr
+    #     if opt.verbose:
+    #         print('update learning rate: %f -> %f' % (self.old_lr, lr))
+    #     self.old_lr = lr
 
-    def update_learning_rate(self,optimizer):
-        lrd = opt.lr / opt.niter_decay
-        lr = self.old_lr - lrd
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-        if opt.verbose:
-            print('update learning rate: %f -> %f' % (self.old_lr, lr))
-        self.old_lr = lr
-
-    def update_learning_rate_warp(self,optimizer):
-        lrd = 0.2 * opt.lr / opt.niter_decay
-        lr = self.old_lr_warp - lrd
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-        if opt.verbose:
-            print('update learning rate: %f -> %f' % (self.old_lr_warp, lr))
-        self.old_lr_warp = lr
+    # def update_learning_rate_warp(self,optimizer):
+    #     lrd = 0.2 * opt.lr / opt.niter_decay
+    #     lr = self.old_lr_warp - lrd
+    #     for param_group in optimizer.param_groups:
+    #         param_group['lr'] = lr
+    #     if opt.verbose:
+    #         print('update learning rate: %f -> %f' % (self.old_lr_warp, lr))
+    #     self.old_lr_warp = lr

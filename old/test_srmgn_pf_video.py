@@ -36,7 +36,7 @@ if __name__ == "__main__":
     dataset = data_loader.load_data()
     dataset_size = len(data_loader)
 
-    warp_model = AFWM(opt, 3)
+    warp_model = AFWM(3, opt.align_corners)
     warp_model.eval()
     warp_model.to(device)
     load_checkpoint(warp_model, opt.warp_checkpoint, device)

@@ -9,31 +9,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
 
-from models.afwm import TVLoss 
+from models.losses.tv_loss import TVLoss
+from models.rmgn_generator import RMGNGenerator
 from models.pfafn.afwm import AFWM 
 from models.afwm_pb import AFWM as PBAFWM 
-from models.networks import ResUnetGenerator, VGGLoss
+from models.networks import ResUnetGenerator
 from options.train_options import TrainOptions
 from utils.utils import load_checkpoint_parallel, load_checkpoint_part_parallel, save_checkpoint
 from data.dresscode_dataset import DressCodeDataset
+from data.viton_dataset import LoadVITONDataset
 
 
 opt = TrainOptions().parse()
 path = 'runs/' + opt.name
 os.makedirs(path, exist_ok=True)
 os.makedirs(opt.checkpoints_dir,exist_ok=True)
-
-
-def CreateDataset(opt):
-    #training with augumentation
-    #from data.aligned_dataset import AlignedDataset_aug
-    #dataset = AlignedDataset_aug()
-    from data.aligned_dataset import AlignedDataset
-    dataset = AlignedDataset()
-    dataset.initialize(opt)
-    return dataset
 
 
 os.makedirs('sample', exist_ok=True)
@@ -49,21 +40,18 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-# train_data = CreateDataset(opt)
 train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
-train_sampler = DistributedSampler(train_data)
-train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
-                          num_workers=16, pin_memory=True, sampler=train_sampler)
+train_data = LoadVITONDataset(path=opt.dataroot, phase='train', size=(256, 192))
+train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=True, num_workers=16)
 dataset_size = len(train_loader)
-print('#training images = %d' % dataset_size)
 
-PF_warp_model = AFWM(opt, 3)
+PF_warp_model = AFWM(3, opt.align_corners)
 PF_warp_model.train()
 PF_warp_model.to(device)
 # load_checkpoint_part_parallel(PF_warp_model, opt.PBAFN_warp_checkpoint)
 load_checkpoint_parallel(PF_warp_model, opt.PFAFN_warp_checkpoint, device)
 
-PB_warp_model = PBAFWM(opt, 45)
+PB_warp_model = PBAFWM(45, opt.align_corners)
 PB_warp_model.eval()
 PB_warp_model.to(device)
 load_checkpoint_parallel(PB_warp_model, opt.PBAFN_warp_checkpoint, device)
@@ -111,8 +99,6 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     train_loss = 0
     train_fea_loss = 0
     train_flow_loss = 0
-
-    train_sampler.set_epoch(epoch)
 
     for i, data in enumerate(train_loader):
 

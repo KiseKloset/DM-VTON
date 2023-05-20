@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import tracemalloc
 
 import cv2
 import numpy as np
@@ -9,14 +10,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
 
-from models.afwm_pb import TVLoss
+from models.losses.tv_loss import TVLoss
+from models.losses.vgg_loss import VGGLoss
 from models.afwm_pb import AFWM as PBAFWM 
-from models.networks import ResUnetGenerator, VGGLoss
+from models.networks import ResUnetGenerator
 from options.train_options import TrainOptions
 from utils.utils import load_checkpoint_parallel, save_checkpoint
 from data.dresscode_dataset import DressCodeDataset
+from data.viton_dataset import LoadVITONDataset
 
 
 opt = TrainOptions().parse()
@@ -24,16 +26,6 @@ path = 'runs/'+opt.name
 os.makedirs(path,exist_ok=True)
 os.makedirs(opt.checkpoints_dir,exist_ok=True)
 
-
-def CreateDataset(opt, phase='train'):
-    #training with augumentation
-    #from data.aligned_dataset import AlignedDataset_aug
-    #dataset = AlignedDataset_aug()
-    from data.aligned_dataset import AlignedDataset
-    dataset = AlignedDataset()
-    val = True if phase=='val' else False
-    dataset.initialize(opt, val=val)
-    return dataset
 
 os.makedirs('sample',exist_ok=True)
 opt = TrainOptions().parse()
@@ -48,15 +40,13 @@ device = torch.device(f'cuda:{opt.gpu_ids[0]}')
 
 start_epoch, epoch_iter = 1, 0
 
-# train_data = CreateDataset(opt)
-train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
-train_sampler = DistributedSampler(train_data)
-train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=False,
-                                               num_workers=16, pin_memory=True, sampler=train_sampler)
+# train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
+train_data = LoadVITONDataset(path=opt.dataroot, phase='train', size=(256, 192))
+train_loader = DataLoader(train_data, batch_size=opt.batchSize, shuffle=True, num_workers=16)
 
 dataset_size = len(train_loader)
 
-warp_model = PBAFWM(opt, 45)
+warp_model = PBAFWM(45, opt.align_corners)
 warp_model.train()
 warp_model.to(device)
 load_checkpoint_parallel(warp_model, opt.PBAFN_warp_checkpoint, device)
@@ -64,10 +54,7 @@ load_checkpoint_parallel(warp_model, opt.PBAFN_warp_checkpoint, device)
 gen_model = ResUnetGenerator(8, 4, 5, ngf=64, norm_layer=nn.BatchNorm2d)
 gen_model.train()
 gen_model.to(device)
-load_checkpoint_parallel(gen_model, opt.PBAFN_gen_checkpoint, device)
-
-warp_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(warp_model).to(device)
-gen_model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(gen_model).to(device)
+# load_checkpoint_parallel(gen_model, opt.PBAFN_gen_checkpoint, device)
 
 if opt.isTrain and len(opt.gpu_ids):
     model = torch.nn.parallel.DistributedDataParallel(warp_model, device_ids=[opt.gpu_ids[0]])
@@ -98,8 +85,6 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     train_warp_loss = 0
     train_gen_loss = 0
 
-
-    train_sampler.set_epoch(epoch)
     for i, data in enumerate(train_loader):
 
         iter_start_time = time.time()
