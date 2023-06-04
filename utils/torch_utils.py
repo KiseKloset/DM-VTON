@@ -37,6 +37,20 @@ def select_device(device='', batch_size=0):
     return arg
 
 
+def get_ckpt(ckpt_path):
+    ckpt = torch.load(ckpt_path, map_location='cpu') if ckpt_path else None
+    return ckpt
+
+
+def load_ckpt(model, ckpt=None):
+    if ckpt is not None:
+        ckpt_new = model.state_dict()
+        pretrained = ckpt.get('model') if ckpt.get('model') else ckpt
+        for param in ckpt_new:
+            ckpt_new[param] = pretrained[param]
+        model.load_state_dict(ckpt_new)
+
+
 def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9):
     params = [p for p in model.parameters()]
 
@@ -52,21 +66,6 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9):
         raise NotImplementedError(f'Optimizer {name} not implemented.')
 
     return optimizer
-
-
-def smart_pretrained(model, ckpt_path, name=''):
-    if ckpt_path:
-        ckpt = torch.load(ckpt_path, map_location='cpu')
-        ckpt_new = model.state_dict()
-        pretrained = ckpt.get('model') if ckpt.get('model') else ckpt
-        for param in ckpt_new:
-            ckpt_new[param] = pretrained[param]
-        model.load_state_dict(ckpt_new)
-        print(f'Load pretrained {name} from {ckpt_path}')
-    else:
-        ckpt = None
-    
-    return ckpt
 
 
 def smart_resume(ckpt, optimizer, ckpt_path, epoch_num):

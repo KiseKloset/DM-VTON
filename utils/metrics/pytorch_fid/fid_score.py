@@ -42,14 +42,8 @@ from PIL import Image
 from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    # If tqdm is not available, provide a mock version of it
-    def tqdm(x):
-        return x
 
-from pytorch_fid.inception import InceptionV3
+from .inception import InceptionV3
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('--batch-size', type=int, default=50,
@@ -112,7 +106,6 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu',
        query tensor.
     """
     model.eval()
-
     if batch_size > len(files):
         print(('Warning: batch size is bigger than the data size. '
                'Setting batch size to data size'))
@@ -129,7 +122,7 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu',
 
     start_idx = 0
 
-    for batch in tqdm(dataloader):
+    for batch in dataloader:
         batch = batch.to(device)
         with torch.no_grad():
             pred = model(batch)[0]
@@ -245,7 +238,7 @@ def compute_statistics_of_path(path, model, batch_size, dims, device,
     return m, s
 
 
-def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
+def calculate_fid_given_paths(paths, batch_size, device, dims=2048, num_workers=1):
     """Calculates the FID of two paths"""
     for p in paths:
         if not os.path.exists(p):

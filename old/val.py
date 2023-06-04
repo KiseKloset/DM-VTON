@@ -1,43 +1,36 @@
-import shutil
 from pathlib import Path
 from tqdm import tqdm
 
 import cupy
 import torch
-import torchvision as tv
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from data.viton_dataset import LoadVITONDataset
 from models.pfafn.afwm_test import AFWM
-from models.afwm_test import AFWM as FSAFWM
 from models.mobile_unet_generator import MobileNetV2_unet
-from models.networks import ResUnetGenerator
 from opt.test_opt import TestOptions
-from utils.torch_utils import select_device, get_ckpt, load_ckpt
+from utils.torch_utils import smart_pretrained, select_device
 from utils.general import Profile, warm_up, print_log
-from utils.metrics.pytorch_fid.fid_score import calculate_fid_given_paths
-from utils.metrics.lpips.lpips import calculate_lpips_given_paths
+from utils.metrics import PytorchFID
 
 
-def run_test_pf(models, data_loader, align_corners, device, img_dir, save_dir, log_path, save_img=True):
+def run_val_pf(models, val_loader, align_corners, device, log_path):
     warp_model, gen_model = models['warp'], models['gen']
     metrics = {}
-
-    tryon_dir = Path(save_dir) / 'results' / 'tryon'
-    visualize_dir = Path(save_dir) / 'results' / 'visualize'
-    tryon_dir.mkdir(parents=True, exist_ok=True)
-    visualize_dir.mkdir(parents=True, exist_ok=True)
+    pytorch_fid = PytorchFID()
 
     # Warm-up gpu
     dummy_input = torch.randn(1, 7, 256, 192, dtype=torch.float).to(device)
     warm_up(gen_model, dummy_input)
 
-    # testidate
+    # Validate
+    real_imgs = []
+    tryon_imgs = []
     with torch.no_grad():
         seen, dt = 0, (Profile(device=device), Profile(device=device), Profile(device=device))
 
-        for idx, data in enumerate(tqdm(data_loader)):
+        for idx, data in enumerate(tqdm(val_loader)):
             # Prepare data
             with dt[0]:
                 real_image = data['image'].to(device)
@@ -65,41 +58,25 @@ def run_test_pf(models, data_loader, align_corners, device, img_dir, save_dir, l
                 p_tryon = warped_cloth * m_composite + p_rendered * (1 - m_composite)
 
             seen += len(p_tryon)
-            
-            # Save images
-            for j in range(len(data['p_name'])):
-                p_name = data['p_name'][j]
+            real_imgs.append((real_image + 1) / 2)
+            tryon_imgs.append((p_tryon + 1) / 2)
+            # real_imgs.append(make_grid(real_image, normalize=True, value_range=(-1,1)))
+            # tryon_imgs.append(make_grid(p_tryon, normalize=True, value_range=(-1,1)))
 
-                tv.utils.save_image(
-                    p_tryon[j],
-                    tryon_dir / p_name,
-                    nrow=int(1),
-                    normalize=True,
-                    value_range=(-1,1),
-                )
-
-                combine = torch.cat([real_image[j].float(), clothes[j], warped_cloth[j], p_tryon[j]], -1).squeeze()
-                tv.utils.save_image(
-                    combine,
-                    visualize_dir / p_name,
-                    nrow=int(1),
-                    normalize=True,
-                    value_range=(-1,1),
-                )
+            # import torchvision as tv
+            # p_name = f'{idx}.jpg'
+            # tv.utils.save_image(
+            #     p_tryon,
+            #     Path('runs/test/b') / p_name,
+            #     nrow=int(1),
+            #     normalize=True,
+            #     value_range=(-1,1),
+            # )
         
-    fid = calculate_fid_given_paths(
-        paths=[str(img_dir), str(tryon_dir)],
-        batch_size=50,
-        device=device,
-    )
-    lpips = calculate_lpips_given_paths(paths=[str(img_dir), str(tryon_dir)], device=device)
-
-    if not save_img:
-        shutil.rmtree(Path(save_dir) / 'results')
-
+    fid = metrics.pytorch_fid.compute_fid(real_imgs, seen, tryon_imgs, seen)
+    
     # FID
     metrics['fid'] = fid
-    metrics['lpips'] = lpips
 
     # Speed
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -117,33 +94,32 @@ def run_test_pf(models, data_loader, align_corners, device, img_dir, save_dir, l
 def main(opt):
     # Device
     device = select_device(opt.device, batch_size=opt.batch_size)
-    log_path = Path(opt.save_dir) / 'log.txt'
-    
+
     # Model
-    warp_model = AFWM(3, opt.align_corners).to(device)
+    from models.afwm_test import AFWM as FSAFWM
+    from models.networks import ResUnetGenerator
+    warp_model = FSAFWM(3, opt.align_corners)
     warp_model.eval()
-    warp_ckpt = get_ckpt(opt.pf_warp_checkpoint)
-    load_ckpt(warp_model, warp_ckpt)
-    print_log(log_path, f'Load pretrained parser-free warp from {opt.pf_warp_checkpoint}')
-    gen_model = MobileNetV2_unet(7, 4).to(device)
+    warp_model.to(device)
+    smart_pretrained(warp_model, opt.pf_warp_checkpoint)
+    # gen_model = MobileNetV2_unet(7, 4)
+    gen_model = ResUnetGenerator(8, 4, 5, ngf=64, norm_layer=torch.nn.BatchNorm2d)
     gen_model.eval()
-    gen_ckpt = get_ckpt(opt.pf_gen_checkpoint)
-    load_ckpt(gen_model, gen_ckpt)
-    print_log(log_path, f'Load pretrained parser-free gen from {opt.pf_gen_checkpoint}')
+    gen_model.to(device)
+    smart_pretrained(gen_model, opt.pf_gen_checkpoint)
     
     # Dataloader
-    test_data = LoadVITONDataset(path=opt.dataroot, phase='test', size=(256, 192))
-    data_loader = DataLoader(test_data, batch_size=opt.batch_size, shuffle=False, num_workers=opt.workers)
+    val_data = LoadVITONDataset(path=opt.dataroot, phase='test', size=(256, 192))
+    val_loader = DataLoader(val_data, batch_size=opt.batch_size, shuffle=False, num_workers=opt.workers)
 
-    run_test_pf(
+    log_path = Path(opt.save_dir) / 'log.txt'
+
+    run_val_pf(
         models={'warp': warp_model, 'gen': gen_model},
-        data_loader=data_loader,
+        val_loader=val_loader,
         align_corners=opt.align_corners,
         device=device,
         log_path=log_path,
-        save_dir=opt.save_dir,
-        img_dir=Path(opt.dataroot) / 'test_img',
-        save_img=True,
     )
 
 

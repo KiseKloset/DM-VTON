@@ -32,7 +32,8 @@ class BaseOptions():
         self.parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')    
 
         # For data
-        self.parser.add_argument('--dataroot', type=str)
+        self.parser.add_argument('--dataroot', type=str, help='train dataset path')
+        self.parser.add_argument('--valroot', type=str, help='val/test dataset path')
         self.parser.add_argument('--batch_size', type=int, default=32, help='input batch size')
         self.parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')    
         self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation')

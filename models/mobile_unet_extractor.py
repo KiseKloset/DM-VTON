@@ -149,9 +149,11 @@ class MobileNetV2_dynamicFPN(nn.Module):
         lateral_tensors = []
         n_lateral_connections = 0
         for i, block in enumerate(self.inverted_residual_blocks):
+            # print(i, block)
             output = block(x)  # run block of mobile_net_V2
             if self.inverted_residual_setting[i]['stride'] > 1 \
                     and n_lateral_connections < len(self.lateral_layers):
+                # print('DO:', self.lateral_layers[n_lateral_connections])
                 lateral_tensors.append(self.lateral_layers[n_lateral_connections](output))
                 n_lateral_connections += 1
             x = output

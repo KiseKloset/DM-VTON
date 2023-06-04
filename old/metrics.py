@@ -3,8 +3,8 @@ import numpy as np
 import torch
 from torch.nn.functional import adaptive_avg_pool2d
 
-from pytorch_fid.inception import InceptionV3
-from pytorch_fid.fid_score import calculate_frechet_distance
+from metrics.pytorch_fid.inception import InceptionV3
+from metrics.pytorch_fid.fid_score import calculate_frechet_distance
 
 
 class PytorchFID:
