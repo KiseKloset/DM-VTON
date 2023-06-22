@@ -1,5 +1,3 @@
-import sys
-from pathlib import Path
 from typing import Callable, Optional
 
 import numpy as np
@@ -8,15 +6,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[3]  # root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-
 from base.base_model import BaseModel
-from model.common.fpn import FeaturePyramidNetwork
-from model.common.resnet import ResidualBlockV2
-from model.common.style import StyledFConvBlock, StyledConvBlock
+from models.common.style import StyledFConvBlock, StyledConvBlock
+from models.extractors import ResNetExtractor
 
 
 def apply_offset(offset) -> Tensor:
@@ -33,57 +25,6 @@ def apply_offset(offset) -> Tensor:
     return torch.stack(grid_list, dim=-1)
 
 
-class DownSample(nn.Module):
-    def __init__(
-        self, 
-        in_channels: int, 
-        out_channels: int,
-        stride: int = 2,
-        padding: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ) -> None:
-        super().__init__()
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        self.bn = norm_layer(in_channels)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=padding, bias=False)
-
-    def forward(self, x: Tensor) -> Tensor:
-        out = self.bn(x)
-        out = self.relu(out)
-        out = self.conv(out)
-
-        return out
-
-
-class FeatureEncoder(nn.Module):
-    def __init__(
-        self, 
-        in_channels: int, 
-        out_channels_list: list[int],
-    ) -> None:
-        # in_channels = 3 for images, and is larger (e.g., 17+1+1) for agnositc representation
-        super().__init__()
-        self.encoders = nn.ModuleList()
-        self.out_channels_list = [in_channels] + out_channels_list
-        for i in range(len(self.out_channels_list) - 1):
-            encoder = nn.Sequential(
-                        DownSample(self.out_channels_list[i], self.out_channels_list[i+1]),
-                        ResidualBlockV2(self.out_channels_list[i+1], self.out_channels_list[i+1]),
-                        ResidualBlockV2(self.out_channels_list[i+1], self.out_channels_list[i+1])
-                    )
-            
-            self.encoders.append(encoder)
-
-    def forward(self, x: Tensor) -> list[Tensor]:
-        out = []
-        for encoder in self.encoders:
-            out.append(encoder(x))
-
-        return out
-
-
 # TODO: Check B is batchsize (forward)
 # TODO: Check edge == None
 # Class Appearance Flow Estimation Network
@@ -96,6 +37,7 @@ class AFEN(nn.Module):
         modulated_conv: bool = True,
         demodulate: bool = True,
         norm_mlp: bool = False,
+        align_corners: bool = True,
         act: str = 'lrelu',
     ) -> None:
         super().__init__()
@@ -103,6 +45,7 @@ class AFEN(nn.Module):
         self.refine_net = nn.ModuleList()
         self.styled_net = nn.ModuleList()
         self.styled_f_net = nn.ModuleList()
+        self.align_corners = align_corners
 
         for _ in range(n_pyramid):
             refine_block = torch.nn.Sequential(
@@ -207,6 +150,7 @@ class AFEN(nn.Module):
                                 last_flow.detach().permute(0, 2, 3, 1),
                                 mode='bilinear', 
                                 padding_mode='border',
+                                align_corners=self.align_corners,
                             )
             else:
                 x_warp_after = x_warp
@@ -216,25 +160,25 @@ class AFEN(nn.Module):
             delta_list.append(flow)
             flow = apply_offset(flow)
             if last_flow is not None:
-                flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border')
+                flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
             else:
                 flow = flow.permute(0, 3, 1, 2)
 
             last_flow = flow
-            x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border')
+            x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
             concat = torch.cat([x_warp,x_cond],1)
             flow = self.refine_net[i](concat)
             delta_list.append(flow)
             flow = apply_offset(flow)
-            flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border')
+            flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
 
             last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
             last_flow_all.append(last_flow)
             cur_x = F.interpolate(x, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
-            cur_x_warp = F.grid_sample(cur_x, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border')
+            cur_x_warp = F.grid_sample(cur_x, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
             x_all.append(cur_x_warp)
             cur_x_edge = F.interpolate(x_edge, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
-            cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='zeros')
+            cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='zeros', align_corners=self.align_corners)
             x_edge_all.append(cur_x_warp_edge)
             flow_x,flow_y = torch.split(last_flow,1,dim=1)
             delta_x = F.conv2d(flow_x, self.weight)
@@ -242,7 +186,7 @@ class AFEN(nn.Module):
             delta_x_all.append(delta_x)
             delta_y_all.append(delta_y)
 
-        x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='border')
+        x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='border', align_corners=self.align_corners)
 
         return x_warp, last_flow, cond_fea_all, last_flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
 
@@ -254,13 +198,15 @@ class AFWM(BaseModel):
         self, 
         cond_in_channels: int,
         filters: list[int] = [64, 128, 256, 256, 256],
+        align_corners: bool = True
     ) -> None:
         super().__init__()
-        self.image_features = FeatureEncoder(in_channels=3, out_channels_list=filters) 
-        self.cond_features = FeatureEncoder(in_channels=cond_in_channels, out_channels_list=filters)
-        self.image_FPN = FeaturePyramidNetwork(in_channels_list=filters, out_channels=256)
-        self.cond_FPN = FeaturePyramidNetwork(in_channels_list=filters, out_channels=256)
-        self.aflow_net = AFEN(len(filters))
+        self.image_extractor = ResNetExtractor(in_channels=3, out_channels=256, feature_channels_list=filters)
+        self.cond_extractor = ResNetExtractor(in_channels=cond_in_channels, out_channels=256, feature_channels_list=filters)
+
+        self.aflow_net = AFEN(len(filters), align_corners=align_corners)
+        
+
         # self.old_lr = opt.lr
         # self.old_lr_warp = opt.lr*0.2
 
@@ -270,8 +216,8 @@ class AFWM(BaseModel):
         image_input: Tensor, 
         image_edge: Tensor,
     ) -> tuple:
-        cond_pyramids = self.cond_FPN(self.cond_features(cond_input))
-        image_pyramids = self.image_FPN(self.image_features(image_input))
+        image_pyramids = self.image_extractor(image_input)
+        cond_pyramids = self.cond_extractor(cond_input)
 
         x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all \
             = self.aflow_net(image_input, image_edge, image_pyramids, cond_pyramids)

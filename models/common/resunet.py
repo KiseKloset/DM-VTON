@@ -11,12 +11,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[2]  # root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-
-from model.common.resnet import ResidualBlock
+from models.common.resnet import ResidualBlock
 
 
 """

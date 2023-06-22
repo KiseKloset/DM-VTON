@@ -1,8 +1,8 @@
 """
 StyleGan
 Edit from: 
-https://github.com/rosinality/progressive-gan-pytorch/blob/master/model.py
-https://github.com/InterDigitalInc/FeatureStyleEncoder/blob/main/pixel2style2pixel/models/stylegan2/model.py
+https://github.com/rosinality/progressive-gan-pytorch/blob/master/models.py
+https://github.com/InterDigitalInc/FeatureStyleEncoder/blob/main/pixel2style2pixel/models/stylegan2/models.py
 """
 
 import math
@@ -14,12 +14,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[3]  # root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-
 
 
 # TODO: Try StyleGAN2
@@ -87,7 +81,7 @@ class EqualConv2d(nn.Module):
 
         conv = nn.Conv2d(
             in_channels=in_channels, 
-            out_channel=out_channels, 
+            out_channels=out_channels, 
             kernel_size=kernel_size,
             stride=stride,
             padding=padding,

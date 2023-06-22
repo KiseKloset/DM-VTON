@@ -7,16 +7,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[3]  # root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
     
-from model.common.factory import get_act, get_norm
-from model.common.conv_norm_activation import CustomeConv2dNormActivation, CustomeConvTranspose2dNormActivation
-from model.pf.rmgn.base_network import BaseNetwork
-from model.pf.rmgn.rmff import RMFFResNetwork
+from models.common.factory import get_act, get_norm
+from models.common.conv_norm_activation import CustomeConv2dNormActivation, CustomeConvTranspose2dNormActivation
+from models.pf.rmgn.base_network import BaseNetwork
+from models.pf.rmgn.rmff import RMFFResNetwork
 
 
 # TODO: Try AttrDilatedEncoder

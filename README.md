@@ -62,7 +62,7 @@ PyTorch deep learning project made easy.
   │
   ├── base/ - abstract base classes
   │   ├── base_data_loader.py
-  │   ├── base_model.py
+  │   ├── base_models.py
   │   └── base_trainer.py
   │
   ├── data_loader/ - anything about data loading goes here
@@ -71,7 +71,7 @@ PyTorch deep learning project made easy.
   ├── data/ - default directory for storing input data
   │
   ├── model/ - models, losses, and metrics
-  │   ├── model.py
+  │   ├── models.py
   │   ├── metric.py
   │   └── loss.py
   │
@@ -274,7 +274,7 @@ which is increased to 256 by command line options.
 
 * **Example**
 
-  Please refer to `model/model.py` for a LeNet example.
+  Please refer to `model/models.py` for a LeNet example.
 
 ### Loss
 Custom loss functions can be implemented in 'model/loss.py'. Use them by changing the name given in "loss" in config file, to corresponding name.
@@ -321,7 +321,7 @@ A copy of config file will be saved in the same folder.
   {
     'arch': arch,
     'epoch': epoch,
-    'state_dict': self.model.state_dict(),
+    'state_dict': self.models.state_dict(),
     'optimizer': self.optimizer.state_dict(),
     'monitor_best': self.mnt_best,
     'config': self.config
@@ -376,3 +376,11 @@ This project is licensed under the MIT License. See  LICENSE for more details
 
 ## Acknowledgements
 This project is inspired by the project [Tensorflow-Project-Template](https://github.com/MrGemy95/Tensorflow-Project-Template) by [Mahmoud Gemy](https://github.com/MrGemy95)
+
+
+## TODO
+[] select_device
+[] distributed train
+[] val
+[] smart resume
+[] Log

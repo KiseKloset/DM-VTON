@@ -10,11 +10,6 @@ from pathlib import Path
 
 from torch.nn import init
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[3]  # root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-
 from base.base_model import BaseModel
 
 

@@ -1,16 +1,9 @@
-import sys
-from pathlib import Path
 from typing import Callable, Optional
 
 import torch.nn as nn
 from torch import Tensor
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[3]  # root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-
-from model.common.resunet import ResUnetSkipConnectionBlock
+from models.common.resunet import ResUnetSkipConnectionBlock
 
 
 class ResUnetGenerator(nn.Module):
