@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 
 from data.viton_dataset import LoadVITONDataset
 from models.pfafn.afwm import AFWM
-from models.afwm import AFWM as FSAFWM
 from models.mobile_unet_generator import MobileNetV2_unet
 from models.networks import ResUnetGenerator
 from opt.test_opt import TestOptions

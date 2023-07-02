@@ -140,8 +140,8 @@ def train_pb_warp(opt):
     warp_scheduler = MyLRScheduler(warp_optimizer, last_epoch, opt.niter, opt.niter_decay, False)
 
     # Dataloader
-    train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
-    # train_data = LoadVITONDataset(path=opt.dataroot, phase='train', size=(256, 192))
+    # train_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='train', category=['upper_body'])
+    train_data = LoadVITONDataset(path=opt.dataroot, phase='train', size=(256, 192))
     train_loader = DataLoader(train_data, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 
     # Loss

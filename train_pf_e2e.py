@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 import val
 from models.losses.tv_loss import TVLoss
 from models.losses.vgg_loss import VGGLoss
-from models.pfafn.afwm import AFWM 
+from models.pfafn.afwm import AFWM
 from models.afwm_pb import AFWM as PBAFWM
 from models.mobile_unet_generator import MobileNetV2_unet 
 from models.networks import ResUnetGenerator

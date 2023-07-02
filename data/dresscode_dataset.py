@@ -231,23 +231,30 @@ class DressCodeDataset(data.Dataset):
         dense_mask = Image.open(os.path.join(dataroot, 'dense', im_name.replace('_0.jpg', '_5.png'))).convert('L')
         dense_mask = dense_mask.resize((self.width, self.height), Image.NEAREST)
         dense_mask = self.transform_parse(dense_mask) * 255.0
-
-        result = {
-            'img_path': os.path.join(dataroot, 'images', im_name),
-            'color_path': os.path.join(dataroot, 'images', c_name),
-            'color_un_path': os.path.join(dataroot, 'images', un_c_name),
-            'path': os.path.join(dataroot, 'label_maps', parse_name),
-            'image': im,
-            'color': cloth,
-            'edge': cloth_edge,
-            'color_un': un_cloth,
-            'edge_un': un_cloth_edge,
-            'label': parse,
-            'pose': pose_map,
-            'densepose': dense_mask,
-        }
-
-        return result
+        
+        if self.phase=='train':
+            return {
+                'img_path': os.path.join(dataroot, 'images', im_name),
+                'color_path': os.path.join(dataroot, 'images', c_name),
+                'color_un_path': os.path.join(dataroot, 'images', un_c_name),
+                'path': os.path.join(dataroot, 'label_maps', parse_name),
+                'image': im,
+                'color': cloth,
+                'edge': cloth_edge,
+                'color_un': un_cloth,
+                'edge_un': un_cloth_edge,
+                'label': parse,
+                'pose': pose_map,
+                'densepose': dense_mask,
+            }
+        else:
+            return {
+                'image': im,
+                'color': cloth, 
+                'edge': cloth_edge, 
+                'p_name': im_name, 
+                'c_name': c_name,
+            }
 
     def __len__(self):
         return len(self.c_names)

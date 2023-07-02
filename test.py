@@ -9,8 +9,9 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from data.viton_dataset import LoadVITONDataset
+from data.dresscode_dataset import DressCodeDataset
 from models.pfafn.afwm_test import AFWM
-from models.afwm_test import AFWM as FSAFWM
+#from models.afwm_test import AFWM as FSAFWM
 from models.mobile_unet_generator import MobileNetV2_unet
 from models.networks import ResUnetGenerator
 from opt.test_opt import TestOptions
@@ -69,10 +70,11 @@ def run_test_pf(models, data_loader, align_corners, device, img_dir, save_dir, l
             # Save images
             for j in range(len(data['p_name'])):
                 p_name = data['p_name'][j]
+                c_name = data['c_name'][j]
 
                 tv.utils.save_image(
                     p_tryon[j],
-                    tryon_dir / p_name,
+                    tryon_dir / f'{p_name[:-4]}_{c_name}',
                     nrow=int(1),
                     normalize=True,
                     value_range=(-1,1),
@@ -81,7 +83,7 @@ def run_test_pf(models, data_loader, align_corners, device, img_dir, save_dir, l
                 combine = torch.cat([real_image[j].float(), clothes[j], warped_cloth[j], p_tryon[j]], -1).squeeze()
                 tv.utils.save_image(
                     combine,
-                    visualize_dir / p_name,
+                    visualize_dir / f'{p_name[:-4]}_{c_name}',
                     nrow=int(1),
                     normalize=True,
                     value_range=(-1,1),
@@ -125,6 +127,7 @@ def main(opt):
     warp_ckpt = get_ckpt(opt.pf_warp_checkpoint)
     load_ckpt(warp_model, warp_ckpt)
     print_log(log_path, f'Load pretrained parser-free warp from {opt.pf_warp_checkpoint}')
+    # from SRMGNLastHope.models.mobile_unet_generator import MobileNetV2_unet as LMobileNetV2_unet
     gen_model = MobileNetV2_unet(7, 4).to(device)
     gen_model.eval()
     gen_ckpt = get_ckpt(opt.pf_gen_checkpoint)
@@ -133,6 +136,7 @@ def main(opt):
     
     # Dataloader
     test_data = LoadVITONDataset(path=opt.dataroot, phase='test', size=(256, 192))
+    # test_data = DressCodeDataset(dataroot_path=opt.dataroot, phase='test', category=['upper_body'])
     data_loader = DataLoader(test_data, batch_size=opt.batch_size, shuffle=False, num_workers=opt.workers)
 
     run_test_pf(

@@ -73,9 +73,9 @@ class ModulatedConv2d(nn.Module):
         padding_size = kernel_size // 2
 
         if kernel_size == 1:
-            self.demudulate = False
+            self.demodulate = False
         else:
-            self.demudulate = True
+            self.demodulate = True
 
         self.weight = nn.Parameter(torch.Tensor(fout, fin, kernel_size, kernel_size))
         self.bias = nn.Parameter(torch.Tensor(1, fout, 1, 1))
@@ -104,7 +104,7 @@ class ModulatedConv2d(nn.Module):
 
         s = self.mlp_class_std(latent).view(-1, 1, self.in_channels, 1, 1)
         weight = s * weight
-        if self.demudulate:
+        if self.demodulate:
             d = torch.rsqrt((weight ** 2).sum(4).sum(3).sum(2) + 1e-5).view(-1, self.out_channels, 1, 1, 1)
             weight = (d * weight).view(-1, self.in_channels, self.kernel_size, self.kernel_size)
         else:

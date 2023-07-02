@@ -13,7 +13,8 @@ from torch.utils.data import DataLoader
 
 from models.losses.tv_loss import TVLoss
 from models.losses.vgg_loss import VGGLoss
-from models.pfafn.afwm import AFWM 
+# from models.pfafn.afwm import AFWM 
+from models.fs_vton.afwm_1style import AFWM
 from models.afwm_pb import AFWM as PBAFWM 
 from models.networks import ResUnetGenerator
 from opt.train_opt import TrainOptions
