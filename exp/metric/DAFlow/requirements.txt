@@ -1,0 +1,3 @@
+opencv-python
+h5py
+scikit-image==0.17.2
