@@ -13,8 +13,8 @@ from torch.utils.data import DataLoader
 
 from models.losses.tv_loss import TVLoss
 from models.losses.vgg_loss import VGGLoss
-# from models.pfafn.afwm import AFWM 
-from models.fs_vton.afwm_1style import AFWM
+from models.pfafn.afwm import AFWM 
+# from models.fs_vton.afwm_1style import AFWM
 from models.afwm_pb import AFWM as PBAFWM 
 from models.networks import ResUnetGenerator
 from opt.train_opt import TrainOptions
@@ -64,13 +64,13 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
     concat_un = torch.cat([preserve_mask.to(device), densepose, pose.to(device)], 1)
     with cupy.cuda.Device(int(device.split(':')[-1])):
         flow_out_un = pb_warp_model(concat_un.to(device), clothes_un.to(device), pre_clothes_edge_un.to(device))
-    warped_cloth_un, last_flow_un, cond_un_all, flow_un_all, delta_list_un, x_all_un, x_edge_all_un, delta_x_all_un, delta_y_all_un = flow_out_un
+    warped_cloth_un, last_flow_un, cond_fea_un_all, warp_fea_un_all, flow_un_all, delta_list_un, x_all_un, x_edge_all_un, delta_x_all_un, delta_y_all_un = flow_out_un
     warped_prod_edge_un = F.grid_sample(pre_clothes_edge_un.to(device), last_flow_un.permute(0, 2, 3, 1),
                                         mode='bilinear', padding_mode='zeros', align_corners=opt.align_corners)
 
     with cupy.cuda.Device(int(device.split(':')[-1])):
         flow_out_sup = pb_warp_model(concat_un.to(device), clothes.to(device), pre_clothes_edge.to(device))
-    warped_cloth_sup, last_flow_sup, cond_sup_all, flow_sup_all, delta_list_sup, x_all_sup, x_edge_all_sup, delta_x_all_sup, delta_y_all_sup = flow_out_sup
+    warped_cloth_sup, last_flow_sup, cond_fea_sup_all, warp_fea_sup_all, flow_sup_all, delta_list_sup, x_all_sup, x_edge_all_sup, delta_x_all_sup, delta_y_all_sup = flow_out_sup
 
     arm_mask = torch.FloatTensor((data['label'].cpu().numpy() == 11).astype(np.float64)) + torch.FloatTensor((data['label'].cpu().numpy() == 13).astype(np.float64))
     hand_mask = torch.FloatTensor((data['densepose'].cpu().numpy() == 3).astype(np.int64)) + torch.FloatTensor((data['densepose'].cpu().numpy() == 4).astype(np.int64))
@@ -92,7 +92,7 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
 
     with cupy.cuda.Device(int(device.split(':')[-1])):
         flow_out = pf_warp_model(p_tryon_un.detach(), clothes.to(device), pre_clothes_edge.to(device))
-    warped_cloth, last_flow, cond_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = flow_out
+    warped_cloth, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = flow_out
     warped_prod_edge = x_edge_all[4]
 
     epsilon = 0.001
@@ -124,11 +124,14 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
         loss_flow_y = (delta_y_all[num].pow(2) + epsilon * epsilon).pow(0.45)
         loss_flow_y = torch.sum(loss_flow_y) / (b * c * h * w)
         loss_second_smooth = loss_flow_x + loss_flow_y
-        b1, c1, h1, w1 = cond_all[num].shape
+        b1, c1, h1, w1 = cond_fea_all[num].shape
         weight_all = weight.reshape(-1, 1, 1, 1).repeat(1, 256, h1, w1)
-        cond_sup_loss = ((cond_sup_all[num].detach() - cond_all[num]) ** 2 * weight_all).sum() / (256 * h1 * w1 * num_all)
-        loss_fea_sup_all = loss_fea_sup_all + (5 - num) * 0.04 * cond_sup_loss
-        loss_all = loss_all + (num + 1) * loss_l1 + (num + 1) * 0.2 * loss_vgg + (num + 1) * 2 * loss_edge + (num + 1) * 6 * loss_second_smooth + (5 - num) * 0.04 * cond_sup_loss
+        cond_sup_loss = ((cond_fea_sup_all[num].detach() - cond_fea_all[num]) ** 2 * weight_all).sum() / (256 * h1 * w1 * num_all)
+        warp_sup_loss = ((warp_fea_sup_all[num].detach() - warp_fea_all[num]) ** 2 * weight_all).sum() / (256 * h1 * w1 * num_all)
+        # loss_fea_sup_all = loss_fea_sup_all + (5 - num) * 0.04 * cond_sup_loss
+        loss_fea_sup_all = loss_fea_sup_all + (5 - num) * 0.04 * cond_sup_loss + (5 - num) * 0.04 * warp_sup_loss
+        loss_all = loss_all + (num + 1) * loss_l1 + (num + 1) * 0.2 * loss_vgg + (num + 1) * 2 * loss_edge + (num + 1) * 6 * loss_second_smooth \
+            + (5 - num) * 0.04 * cond_sup_loss + (5 - num) * 0.04 * warp_sup_loss
         if num >= 2:
             b1, c1, h1, w1 = flow_all[num].shape
             weight_all = weight.reshape(-1, 1, 1).repeat(1, h1, w1)

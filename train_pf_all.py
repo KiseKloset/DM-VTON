@@ -10,11 +10,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 
-import val
+import val_noedge as val
 from models.losses.tv_loss import TVLoss
 from models.losses.vgg_loss import VGGLoss
 from models.pfafn.afwm import AFWM
+# from models.pfafn.afwm_noedge import AFWM
 from models.afwm_pb import AFWM as PBAFWM
 from models.mobile_unet_generator import MobileNetV2_unet 
 from models.networks import ResUnetGenerator
@@ -65,7 +67,7 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
     concat_un = torch.cat([preserve_mask.to(device), densepose, pose.to(device)], 1)
     with cupy.cuda.Device(int(device.split(':')[-1])):
         flow_out_un = pb_warp_model(concat_un.to(device), clothes_un.to(device), pre_clothes_edge_un.to(device))
-    warped_cloth_un, last_flow_un, cond_fea_un_all, warp_fea_un_all, flow_un_all, delta_list_un, x_all_un, x_edge_all_un, delta_x_all_un, delta_y_all_un = flow_out_un
+    warped_cloth_un, last_flow_un, cond_fe_un_all, warp_fea_un_all, flow_un_all, delta_list_un, x_all_un, x_edge_all_un, delta_x_all_un, delta_y_all_un = flow_out_un
     warped_prod_edge_un = F.grid_sample(pre_clothes_edge_un.to(device), last_flow_un.permute(0, 2, 3, 1),
                                         mode='bilinear', padding_mode='zeros', align_corners=opt.align_corners)
 
@@ -128,11 +130,8 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
         b1, c1, h1, w1 = cond_fea_all[num].shape
         weight_all = weight.reshape(-1, 1, 1, 1).repeat(1, 256, h1, w1)
         cond_sup_loss = ((cond_fea_sup_all[num].detach() - cond_fea_all[num]) ** 2 * weight_all).sum() / (256 * h1 * w1 * num_all)
-        warp_sup_loss = ((warp_fea_sup_all[num].detach() - warp_fea_all[num]) ** 2 * weight_all).sum() / (256 * h1 * w1 * num_all)
-        # loss_fea_sup_all = loss_fea_sup_all + (5 - num) * 0.04 * cond_sup_loss
-        loss_fea_sup_all = loss_fea_sup_all + (5 - num) * 0.04 * cond_sup_loss + (5 - num) * 0.04 * warp_sup_loss
-        loss_warp = loss_warp + (num + 1) * loss_l1 + (num + 1) * 0.2 * loss_vgg + (num + 1) * 2 * loss_edge + (num + 1) * 6 * loss_second_smooth \
-            + (5 - num) * 0.04 * cond_sup_loss + (5 - num) * 0.04 * warp_sup_loss
+        loss_fea_sup_all = loss_fea_sup_all + (5 - num) * 0.04 * cond_sup_loss
+        loss_warp = loss_warp + (num + 1) * loss_l1 + (num + 1) * 0.2 * loss_vgg + (num + 1) * 2 * loss_edge + (num + 1) * 6 * loss_second_smooth + (5 - num) * 0.04 * cond_sup_loss
         if num >= 2:
             b1, c1, h1, w1 = flow_all[num].shape
             weight_all = weight.reshape(-1, 1, 1).repeat(1, h1, w1)
@@ -144,7 +143,8 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
 
     skin_mask = warped_prod_edge_un.detach() * (1 - person_clothes_edge.to(device))
 
-    gen_inputs = torch.cat([p_tryon_un.detach(), warped_cloth, warped_prod_edge], 1)
+    # gen_inputs = torch.cat([p_tryon_un.detach(), warped_cloth, warped_prod_edge], 1)
+    gen_inputs = torch.cat([p_tryon_un.detach(), warped_cloth], 1)
     gen_outputs = pf_gen_model(gen_inputs)
     # gen_inputs_clothes = torch.cat([warped_cloth, warped_prod_edge], 1)
     # gen_inputs_persons = p_tryon_un.detach()
@@ -182,7 +182,7 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
     # else:
     #     loss_gen = (loss_l1 * 5 + loss_l1_skin * 30 + loss_vgg + loss_vgg_skin * 2 + 1 * loss_mask_l1)
 
-    loss_all = 0.25 * loss_warp + loss_gen
+    loss_all = 1*loss_warp + 0.5*loss_gen
 
     warp_optimizer.zero_grad()
     gen_optimizer.zero_grad()
@@ -246,13 +246,13 @@ def train_pf_e2e(opt):
     pf_warp_ckpt = get_ckpt(opt.pf_warp_checkpoint)
     load_ckpt(pf_warp_model, pf_warp_ckpt)
     print_log(log_path, f'Load pretrained parser-free warp from {opt.pf_warp_checkpoint}')
-    pf_gen_model = MobileNetV2_unet(7, 4).to(device)
+    pf_gen_model = MobileNetV2_unet(6, 4).to(device)
     pf_gen_ckpt = get_ckpt(opt.pf_gen_checkpoint)
     load_ckpt(pf_gen_model, pf_gen_ckpt)
     print_log(log_path, f'Load pretrained parser-free gen from {opt.pf_gen_checkpoint}')
 
     # Optimizer
-    warp_optimizer = smart_optimizer(model=pf_warp_model, name=opt.optimizer, lr=0.2*opt.lr, momentum=opt.momentum)
+    warp_optimizer = smart_optimizer(model=pf_warp_model, name=opt.optimizer, lr=opt.lr, momentum=opt.momentum)
     gen_optimizer = smart_optimizer(model=pf_gen_model, name=opt.optimizer, lr=opt.lr, momentum=opt.momentum)
 
     # Resume

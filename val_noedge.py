@@ -51,7 +51,7 @@ def run_val_pf(data_loader, models, align_corners, device, img_dir, save_dir, lo
             
             # Gen
             # with dt[2]:
-            gen_inputs = torch.cat([real_image, warped_cloth, warped_edge], 1)                
+            gen_inputs = torch.cat([real_image, warped_cloth], 1)                
             gen_outputs = gen_model(gen_inputs)
             p_rendered, m_composite = torch.split(gen_outputs, [3, 1], 1)
             p_rendered = torch.tanh(p_rendered)

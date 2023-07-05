@@ -182,7 +182,7 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
     # else:
     #     loss_gen = (loss_l1 * 5 + loss_l1_skin * 30 + loss_vgg + loss_vgg_skin * 2 + 1 * loss_mask_l1)
 
-    loss_all = 0.25 * loss_warp + loss_gen
+    loss_all = 1.25 * loss_warp + 0.75*loss_gen
 
     warp_optimizer.zero_grad()
     gen_optimizer.zero_grad()

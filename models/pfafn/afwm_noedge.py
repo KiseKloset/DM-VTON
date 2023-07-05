@@ -149,7 +149,7 @@ class AFlowNet(nn.Module):
         self.netRefine = nn.ModuleList(self.netRefine)
 
 
-    def forward(self, x, x_edge, x_warps, x_conds, warp_feature=True):
+    def forward(self, x, x_warps, x_conds, warp_feature=True):
         last_flow = None
         last_flow_all = []
         delta_list = []
@@ -214,9 +214,9 @@ class AFlowNet(nn.Module):
               cur_x = F.interpolate(x, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
               cur_x_warp = F.grid_sample(cur_x, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
               x_all.append(cur_x_warp)
-              cur_x_edge = F.interpolate(x_edge, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
-              cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='zeros', align_corners=self.align_corners)
-              x_edge_all.append(cur_x_warp_edge)
+            #   cur_x_edge = F.interpolate(x_edge, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
+            #   cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='zeros', align_corners=self.align_corners)
+            #   x_edge_all.append(cur_x_warp_edge)
               flow_x,flow_y = torch.split(last_flow,1,dim=1)
               delta_x = F.conv2d(flow_x, self.weight)
               delta_y = F.conv2d(flow_y,self.weight)
@@ -225,7 +225,7 @@ class AFlowNet(nn.Module):
 
         x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1),
                      mode='bilinear', padding_mode='border', align_corners=self.align_corners)
-        return x_warp, last_flow, cond_fea_all, warp_fea_all, last_flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
+        return x_warp, last_flow, cond_fea_all, warp_fea_all, last_flow_all, delta_list, x_all, delta_x_all, delta_y_all
 
 
 class AFWM(nn.Module):
@@ -244,15 +244,15 @@ class AFWM(nn.Module):
         # self.old_lr = opt.lr
         # self.old_lr_warp = opt.lr*0.2
 
-    def forward(self, cond_input, image_input, image_edge):
+    def forward(self, cond_input, image_input):
         # cond_pyramids = self.cond_FPN(self.cond_features(cond_input))
         # image_pyramids = self.image_FPN(self.image_features(image_input))
         cond_pyramids = self.cond_mobile(cond_input) 
         image_pyramids = self.image_mobile(image_input)
 
-        x_warp, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = self.aflow_net(image_input, image_edge, image_pyramids, cond_pyramids)
+        x_warp, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, delta_x_all, delta_y_all = self.aflow_net(image_input, image_pyramids, cond_pyramids)
 
-        return x_warp, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
+        return x_warp, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, delta_x_all, delta_y_all
 
     # def update_learning_rate(self,optimizer):
     #     lrd = opt.lr / opt.niter_decay

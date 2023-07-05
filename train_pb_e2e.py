@@ -67,7 +67,7 @@ def train_batch(data, models, optimizers, criterions, device, writer, global_ste
 
     with cupy.cuda.Device(int(device.split(':')[-1])):
         flow_out = warp_model(concat.to(device), clothes.to(device), pre_clothes_edge.to(device))
-    warped_cloth, last_flow, _1, _2, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = flow_out
+    warped_cloth, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = flow_out
 
     epsilon = 0.001
     loss_smooth = sum([TVLoss(x) for x in delta_list])

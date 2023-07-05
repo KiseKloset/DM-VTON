@@ -416,6 +416,7 @@ class AFlowNet(nn.Module):
         x_all = []
         x_edge_all = []
         cond_fea_all = []
+        warp_fea_all = []
         delta_x_all = []
         delta_y_all = []
         filter_x = [[0, 0, 0],
@@ -451,6 +452,7 @@ class AFlowNet(nn.Module):
               x_warp = x_warps[len(x_warps) - 1 - i]
               x_cond = x_conds[len(x_warps) - 1 - i]
               cond_fea_all.append(x_cond)
+              warp_fea_all.append(x_warp)
 
               if last_flow is not None and warp_feature:
                   x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
@@ -491,7 +493,7 @@ class AFlowNet(nn.Module):
 
         x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1),
                      mode='bilinear', padding_mode='border', align_corners=self.align_corners)
-        return x_warp, last_flow, cond_fea_all, last_flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
+        return x_warp, last_flow, cond_fea_all, warp_fea_all, last_flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
 
 
 class AFWM(nn.Module):
@@ -514,9 +516,9 @@ class AFWM(nn.Module):
         cond_pyramids = self.cond_mobile(cond_input) 
         image_pyramids = self.image_mobile(image_input)
 
-        x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = self.aflow_net(image_input, image_edge, image_pyramids, cond_pyramids)
+        x_warp, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = self.aflow_net(image_input, image_edge, image_pyramids, cond_pyramids)
 
-        return x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
+        return x_warp, last_flow, cond_fea_all, warp_fea_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
 
     # def update_learning_rate(self,optimizer):
     #     lrd = opt.lr / opt.niter_decay
