@@ -62,32 +62,6 @@ def img_from_tokens(tokens):
 
     return result
 
-def img_to_pixelwise_tokens(image):
-    # image : (N, C, H, W)
-
-    # result : (N, C, H * W)
-    result = image.view(*image.shape[:2], -1)
-
-    # result : (N, C,     H * W)
-    #       -> (N, H * W, C    )
-    #        = (N, L,     C)
-    result = result.permute((0, 2, 1))
-
-    # (N, L, C)
-    return result
-
-def img_from_pixelwise_tokens(tokens, image_shape):
-    # tokens      : (N, L, C)
-    # image_shape : (3, )
-
-    # tokens : (N, L, C)
-    #       -> (N, C, L)
-    #        = (N, C, H * W)
-    tokens = tokens.permute((0, 2, 1))
-
-    # (N, C, H, W)
-    return tokens.view(*tokens.shape[:2], *image_shape[1:])
-
 class PositionWiseFFN(nn.Module):
 
     def __init__(self, features, ffn_features, activ = 'gelu', **kwargs):
@@ -228,7 +202,7 @@ class ViTInput(nn.Module):
         # (N, L, features)
         return self.output(result)
 
-class PixelwiseViT(nn.Module):
+class PixelWiseViT(nn.Module):
 
     def __init__(
         self, features, n_heads, n_blocks, ffn_features, embed_features,
@@ -277,88 +251,3 @@ class PixelwiseViT(nn.Module):
 
         return result
 
-class ExtendedTransformerEncoder(nn.Module):
-
-    def __init__(
-        self, features, n_heads, n_blocks, ffn_features, activ, norm,
-        rezero = True, n_ext = 1, **kwargs
-    ):
-        super().__init__(**kwargs)
-
-        self.encoder = TransformerEncoder(
-            features, ffn_features, n_heads, n_blocks, activ, norm, rezero
-        )
-
-        self.extra_tokens = nn.Parameter(torch.empty((1, n_ext, features)))
-        torch.nn.init.normal_(self.extra_tokens)
-
-    def forward(self, x):
-        # x : (N, L, C)
-        N, L, _C = x.shape
-
-        # i_extra_tokens : (N, n_extra, C)
-        i_extra_tokens = self.extra_tokens.tile(N, 1, 1)
-
-        # y : (N, L + n_extra, C)
-        y = torch.cat([ x, i_extra_tokens ], dim = 1)
-        y = self.encoder(y)
-
-        # o_extra_tokens : (N, n_extra, features)
-        o_extra_tokens = y[:, L:, :]
-
-        # result : (N, L, C)
-        result = y[:, :L, :]
-
-        return (result, o_extra_tokens.reshape(N, -1))
-
-class ExtendedPixelwiseViT(nn.Module):
-
-    def __init__(
-        self, features, n_heads, n_blocks, ffn_features, embed_features,
-        activ, norm, image_shape, rezero = True, n_ext = 1, **kwargs
-    ):
-        super().__init__(**kwargs)
-
-        self.image_shape = image_shape
-
-        self.trans_input = ViTInput(
-            image_shape[0], embed_features, features,
-            image_shape[1], image_shape[2],
-        )
-
-        self.encoder = TransformerEncoder(
-            features, ffn_features, n_heads, n_blocks, activ, norm, rezero
-        )
-
-        self.extra_tokens = nn.Parameter(torch.empty((1, n_ext, features)))
-        torch.nn.init.normal_(self.extra_tokens)
-
-        self.trans_output = nn.Linear(features, image_shape[0])
-
-    def forward(self, x):
-        # x : (N, C, H, W)
-
-        # itokens : (N, L, C)
-        itokens    = img_to_pixelwise_tokens(x)
-        (N, L, _C) = itokens.shape
-
-        # i_extra_tokens : (N, n_extra, C)
-        i_extra_tokens = self.extra_tokens.tile(itokens.shape[0], 1, 1)
-
-        # y : (N, L, features)
-        y = self.trans_input(itokens)
-
-        # y : (N, L + n_extra, C)
-        y = torch.cat([ y, i_extra_tokens ], dim = 1)
-        y = self.encoder(y)
-
-        # o_extra_tokens : (N, n_extra, features)
-        o_extra_tokens = y[:, L:, :]
-
-        # otokens : (N, L, C)
-        otokens = self.trans_output(y[:, :L, :])
-
-        # result : (N, C, H, W)
-        result = img_from_pixelwise_tokens(otokens, self.image_shape)
-
-        return (result, o_extra_tokens.reshape(N, -1))

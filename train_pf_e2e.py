@@ -17,6 +17,7 @@ from models.losses.vgg_loss import VGGLoss
 from models.pfafn.afwm import AFWM
 from models.afwm_pb import AFWM as PBAFWM
 from models.mobile_unet_generator import MobileNetV2_unet 
+from models.vitunet import VitMobileNetV2_unet
 from models.networks import ResUnetGenerator
 from opt.train_opt import TrainOptions
 from utils.torch_utils import select_device, get_ckpt, load_ckpt, smart_optimizer, smart_resume
@@ -246,7 +247,8 @@ def train_pf_e2e(opt):
     pf_warp_ckpt = get_ckpt(opt.pf_warp_checkpoint)
     load_ckpt(pf_warp_model, pf_warp_ckpt)
     print_log(log_path, f'Load pretrained parser-free warp from {opt.pf_warp_checkpoint}')
-    pf_gen_model = MobileNetV2_unet(7, 4).to(device)
+    # pf_gen_model = MobileNetV2_unet(7, 4).to(device)
+    pf_gen_model = VitMobileNetV2_unet(7, 4).to(device)
     pf_gen_ckpt = get_ckpt(opt.pf_gen_checkpoint)
     load_ckpt(pf_gen_model, pf_gen_ckpt)
     print_log(log_path, f'Load pretrained parser-free gen from {opt.pf_gen_checkpoint}')

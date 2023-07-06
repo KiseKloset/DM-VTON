@@ -1,6 +1,6 @@
 import copy
 import torch
-from torch import nn
+import torch.nn as nn
 
 def extract_name_kwargs(obj):
     if isinstance(obj, dict):
@@ -43,10 +43,10 @@ def get_activ_layer(activ):
         return nn.GELU(**kwargs)
 
     if name == 'relu':
-        return nn.ReLU(inplace = True, **kwargs)
+        return nn.ReLU(**kwargs)
 
     if name == 'leakyrelu':
-        return nn.LeakyReLU(inplace = True, **kwargs)
+        return nn.LeakyReLU(**kwargs)
 
     if name == 'tanh':
         return nn.Tanh()
@@ -55,9 +55,6 @@ def get_activ_layer(activ):
         return nn.Sigmoid()
 
     raise ValueError("Unknown activation: '%s'" % name)
-
-def select_activation(activation):
-    return get_activ_layer(activation)
 
 def select_optimizer(parameters, optimizer):
     name, kwargs = extract_name_kwargs(optimizer)
@@ -80,3 +77,4 @@ def select_loss(loss):
         return nn.MSELoss(**kwargs)
 
     raise ValueError("Unknown loss: '%s'" % name)
+
