@@ -74,7 +74,7 @@ def run_test_pf(models, data_loader, align_corners, device, img_dir, save_dir, l
 
                 tv.utils.save_image(
                     p_tryon[j],
-                    tryon_dir / f'{p_name[:-4]}_{c_name}',
+                    tryon_dir / p_name,
                     nrow=int(1),
                     normalize=True,
                     value_range=(-1,1),
@@ -83,7 +83,7 @@ def run_test_pf(models, data_loader, align_corners, device, img_dir, save_dir, l
                 combine = torch.cat([real_image[j].float(), clothes[j], warped_cloth[j], p_tryon[j]], -1).squeeze()
                 tv.utils.save_image(
                     combine,
-                    visualize_dir / f'{p_name[:-4]}_{c_name}',
+                    visualize_dir / p_name,
                     nrow=int(1),
                     normalize=True,
                     value_range=(-1,1),
