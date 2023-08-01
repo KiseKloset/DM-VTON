@@ -156,45 +156,46 @@ class AFlowNet(nn.Module):
             x_cond = x_conds[len(x_warps) - 1 - i]
 
             if last_flow is not None and warp_feature:
-                with style_dt[3]:
-                    x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
-                        mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+                # with style_dt[3]:
+                x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
+                    mode='bilinear', padding_mode='border', align_corners=self.align_corners)
             else:
                 x_warp_after = x_warp
 
-            with style_dt[0]:
-                tenCorrelation = F.leaky_relu(input=correlation.FunctionCorrelation(tenFirst=x_warp_after, tenSecond=x_cond, intStride=1), negative_slope=0.1, inplace=False)
-                flow = self.netMain[i](tenCorrelation)
+            # with style_dt[0]:
+            tenCorrelation = F.leaky_relu(input=correlation.FunctionCorrelation(tenFirst=x_warp_after, tenSecond=x_cond, intStride=1), negative_slope=0.1, inplace=False)
+            flow = self.netMain[i](tenCorrelation)
 
-            with style_dt[5]:
-                flow = apply_offset(flow)
+            # with style_dt[5]:
+            flow = apply_offset(flow)
 
             if last_flow is not None:
-                with style_dt[3]:
-                    flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+                # with style_dt[3]:
+                flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
             else:
                 flow = flow.permute(0, 3, 1, 2)
 
             last_flow = flow
 
-            with style_dt[3]:
-                x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+            # with style_dt[3]:
+            x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border', align_corners=self.align_corners)
             
             concat = torch.cat([x_warp,x_cond],1)
             
-            with style_dt[4]:
-                flow = self.netRefine[i](concat)
+            # with style_dt[4]:
+            flow = self.netRefine[i](concat)
             
-            with style_dt[5]:
-                flow = apply_offset(flow)
+            # with style_dt[5]:
+            flow = apply_offset(flow)
             
-            with style_dt[3]:
-                flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+            # with style_dt[3]:
+            flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border', align_corners=self.align_corners)
 
             last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
 
-        with style_dt[3]:
-            x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+        # with style_dt[3]:
+        x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='border', align_corners=self.align_corners)
+        
         return x_warp, last_flow,
 
 
@@ -213,10 +214,10 @@ class AFWM(nn.Module):
         self.aflow_net = AFlowNet(len(num_filters), align_corners=align_corners)
 
     def forward(self, cond_input, image_input):
-        with style_dt[-2]:
-            cond_pyramids = self.cond_mobile(cond_input) 
-        with style_dt[-1]:
-            image_pyramids = self.image_mobile(image_input)
+        # with style_dt[-2]:
+        cond_pyramids = self.cond_mobile(cond_input) 
+        # with style_dt[-1]:
+        image_pyramids = self.image_mobile(image_input)
 
         x_warp, last_flow  = self.aflow_net(image_input, image_pyramids, cond_pyramids)
 
