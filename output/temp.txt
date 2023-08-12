@@ -1,429 +1,0 @@
-Traceback (most recent call last):
-  File "/opt/conda/lib/python3.7/runpy.py", line 193, in _run_module_as_main
-    "__main__", mod_spec)
-  File "/opt/conda/lib/python3.7/runpy.py", line 85, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/lib/python3.7/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/lib/python3.7/site-packages/pytorch_fid/fid_score.py", line 317, in main
-    num_workers)
-  File "/opt/conda/lib/python3.7/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/merge_50_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/merge_50_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/merge_50_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/merge_50_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/merge_50_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 259, in calculate_fid_given_paths
-    m1, s1 = compute_statistics_of_path(paths[0], model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 243, in compute_statistics_of_path
-    m, s = calculate_activation_statistics(files, model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 228, in calculate_activation_statistics
-    act = get_activations(files, model, batch_size, dims, device, num_workers)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 122, in get_activations
-    dataloader = torch.utils.data.DataLoader(dataset,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 350, in __init__
-    batch_sampler = BatchSampler(sampler, batch_size, drop_last)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/utils/data/sampler.py", line 232, in __init__
-    raise ValueError("batch_size should be a positive integer value, "
-ValueError: batch_size should be a positive integer value, but got batch_size=0
-Warning: batch size is bigger than the data size. Setting batch size to data size
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 259, in calculate_fid_given_paths
-    m1, s1 = compute_statistics_of_path(paths[0], model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 243, in compute_statistics_of_path
-    m, s = calculate_activation_statistics(files, model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 228, in calculate_activation_statistics
-    act = get_activations(files, model, batch_size, dims, device, num_workers)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 122, in get_activations
-    dataloader = torch.utils.data.DataLoader(dataset,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 350, in __init__
-    batch_sampler = BatchSampler(sampler, batch_size, drop_last)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/utils/data/sampler.py", line 232, in __init__
-    raise ValueError("batch_size should be a positive integer value, "
-ValueError: batch_size should be a positive integer value, but got batch_size=0
-Warning: batch size is bigger than the data size. Setting batch size to data size
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 257, in calculate_fid_given_paths
-    model = InceptionV3([block_idx]).to(device)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 989, in to
-    return self._apply(convert)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  [Previous line repeated 1 more time]
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 664, in _apply
-    param_applied = fn(param)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 987, in convert
-    return t.to(device, dtype if t.is_floating_point() or t.is_complex() else None, non_blocking)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/cuda/__init__.py", line 229, in _lazy_init
-    torch._C._cuda_init()
-KeyboardInterrupt
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 259, in calculate_fid_given_paths
-    m1, s1 = compute_statistics_of_path(paths[0], model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 243, in compute_statistics_of_path
-    m, s = calculate_activation_statistics(files, model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 228, in calculate_activation_statistics
-    act = get_activations(files, model, batch_size, dims, device, num_workers)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 122, in get_activations
-    dataloader = torch.utils.data.DataLoader(dataset,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 350, in __init__
-    batch_sampler = BatchSampler(sampler, batch_size, drop_last)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/utils/data/sampler.py", line 232, in __init__
-    raise ValueError("batch_size should be a positive integer value, "
-ValueError: batch_size should be a positive integer value, but got batch_size=0
-Warning: batch size is bigger than the data size. Setting batch size to data size
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:13<01:44, 13.05s/it] 22%|██▏       | 2/9 [00:13<00:38,  5.44s/it] 33%|███▎      | 3/9 [00:13<00:18,  3.01s/it] 44%|████▍     | 4/9 [00:13<00:09,  1.86s/it] 67%|██████▋   | 6/9 [00:13<00:02,  1.09it/s] 89%|████████▉ | 8/9 [00:13<00:00,  1.75it/s]100%|██████████| 9/9 [00:14<00:00,  1.84it/s]100%|██████████| 9/9 [00:14<00:00,  1.59s/it]
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:00<00:06,  1.29it/s] 22%|██▏       | 2/9 [00:00<00:02,  2.59it/s] 33%|███▎      | 3/9 [00:01<00:01,  3.82it/s] 56%|█████▌    | 5/9 [00:01<00:00,  5.81it/s] 67%|██████▋   | 6/9 [00:01<00:00,  6.24it/s] 89%|████████▉ | 8/9 [00:01<00:00,  7.71it/s]100%|██████████| 9/9 [00:01<00:00,  5.38it/s]
-FID:  30.432657414641
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/old_50_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/old_086_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/old_086_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/old_093_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/old_093_1/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/old_093_1/tryon
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:12<01:38, 12.35s/it] 22%|██▏       | 2/9 [00:12<00:36,  5.16s/it] 33%|███▎      | 3/9 [00:12<00:17,  2.85s/it] 56%|█████▌    | 5/9 [00:12<00:05,  1.29s/it] 67%|██████▋   | 6/9 [00:12<00:02,  1.05it/s] 78%|███████▊  | 7/9 [00:12<00:01,  1.41it/s]100%|██████████| 9/9 [00:13<00:00,  2.38it/s]100%|██████████| 9/9 [00:13<00:00,  1.47s/it]
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:00<00:06,  1.27it/s] 22%|██▏       | 2/9 [00:00<00:02,  2.48it/s] 33%|███▎      | 3/9 [00:01<00:01,  3.62it/s] 44%|████▍     | 4/9 [00:01<00:01,  4.66it/s] 56%|█████▌    | 5/9 [00:01<00:00,  5.63it/s] 67%|██████▋   | 6/9 [00:01<00:00,  6.56it/s] 78%|███████▊  | 7/9 [00:01<00:00,  7.07it/s] 89%|████████▉ | 8/9 [00:01<00:00,  7.66it/s]100%|██████████| 9/9 [00:01<00:00,  5.12it/s]
-FID:  29.20324614306358
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:12<01:40, 12.57s/it] 22%|██▏       | 2/9 [00:12<00:36,  5.24s/it] 44%|████▍     | 4/9 [00:12<00:10,  2.02s/it] 56%|█████▌    | 5/9 [00:13<00:05,  1.43s/it] 78%|███████▊  | 7/9 [00:13<00:01,  1.26it/s]100%|██████████| 9/9 [00:13<00:00,  1.73it/s]100%|██████████| 9/9 [00:13<00:00,  1.52s/it]
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:00<00:06,  1.30it/s] 22%|██▏       | 2/9 [00:00<00:02,  2.63it/s] 33%|███▎      | 3/9 [00:00<00:01,  3.88it/s] 44%|████▍     | 4/9 [00:01<00:00,  5.03it/s] 56%|█████▌    | 5/9 [00:01<00:00,  5.99it/s] 78%|███████▊  | 7/9 [00:01<00:00,  7.50it/s] 89%|████████▉ | 8/9 [00:01<00:00,  7.95it/s]100%|██████████| 9/9 [00:01<00:00,  5.42it/s]
-FID:  29.20324614306358
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/old_model_ckpt_093_old_data/tryon
-  0%|          | 0/41 [00:00<?, ?it/s]  2%|▏         | 1/41 [00:11<07:28, 11.22s/it]  5%|▍         | 2/41 [00:11<03:02,  4.68s/it] 10%|▉         | 4/41 [00:11<01:06,  1.80s/it] 15%|█▍        | 6/41 [00:11<00:34,  1.00it/s] 20%|█▉        | 8/41 [00:11<00:20,  1.59it/s] 24%|██▍       | 10/41 [00:12<00:13,  2.32it/s] 29%|██▉       | 12/41 [00:12<00:09,  3.17it/s] 34%|███▍      | 14/41 [00:12<00:06,  4.05it/s] 39%|███▉      | 16/41 [00:12<00:04,  5.02it/s] 44%|████▍     | 18/41 [00:12<00:03,  5.98it/s] 49%|████▉     | 20/41 [00:13<00:03,  6.84it/s] 54%|█████▎    | 22/41 [00:13<00:02,  7.58it/s] 59%|█████▊    | 24/41 [00:13<00:02,  8.38it/s] 63%|██████▎   | 26/41 [00:13<00:01,  8.83it/s] 68%|██████▊   | 28/41 [00:13<00:01,  9.16it/s] 73%|███████▎  | 30/41 [00:13<00:01,  9.70it/s] 78%|███████▊  | 32/41 [00:14<00:00,  9.69it/s] 83%|████████▎ | 34/41 [00:14<00:00,  9.64it/s] 88%|████████▊ | 36/41 [00:14<00:00,  9.86it/s] 93%|█████████▎| 38/41 [00:14<00:00,  9.88it/s] 98%|█████████▊| 40/41 [00:15<00:00,  9.83it/s]100%|██████████| 41/41 [00:15<00:00,  2.71it/s]
-  0%|          | 0/41 [00:00<?, ?it/s]  2%|▏         | 1/41 [00:00<00:27,  1.47it/s]  7%|▋         | 3/41 [00:00<00:09,  4.06it/s] 12%|█▏        | 5/41 [00:01<00:05,  6.29it/s] 17%|█▋        | 7/41 [00:01<00:04,  7.43it/s] 20%|█▉        | 8/41 [00:01<00:04,  7.81it/s] 22%|██▏       | 9/41 [00:01<00:03,  8.17it/s] 24%|██▍       | 10/41 [00:01<00:03,  8.52it/s] 29%|██▉       | 12/41 [00:01<00:03,  9.42it/s] 34%|███▍      | 14/41 [00:01<00:02,  9.75it/s] 39%|███▉      | 16/41 [00:02<00:02,  9.69it/s] 44%|████▍     | 18/41 [00:02<00:02, 10.03it/s] 49%|████▉     | 20/41 [00:02<00:02,  9.95it/s] 54%|█████▎    | 22/41 [00:02<00:01,  9.89it/s] 59%|█████▊    | 24/41 [00:02<00:01, 10.23it/s] 63%|██████▎   | 26/41 [00:03<00:01, 10.22it/s] 68%|██████▊   | 28/41 [00:03<00:01, 10.20it/s] 73%|███████▎  | 30/41 [00:03<00:01, 10.55it/s] 78%|███████▊  | 32/41 [00:03<00:00, 10.53it/s] 83%|████████▎ | 34/41 [00:03<00:00, 10.19it/s] 88%|████████▊ | 36/41 [00:04<00:00, 10.15it/s] 93%|█████████▎| 38/41 [00:04<00:00, 10.53it/s] 98%|█████████▊| 40/41 [00:04<00:00, 10.24it/s]100%|██████████| 41/41 [00:04<00:00,  8.92it/s]
-FID:  10.439796822657485
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/merge_ckpt_093_old_data/tryon
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/merge_ckpt_50_old_data/tryon
-  0%|          | 0/41 [00:00<?, ?it/s]  2%|▏         | 1/41 [00:10<06:53, 10.35s/it]  7%|▋         | 3/41 [00:10<01:44,  2.75s/it] 12%|█▏        | 5/41 [00:10<00:50,  1.39s/it] 17%|█▋        | 7/41 [00:10<00:28,  1.19it/s] 22%|██▏       | 9/41 [00:11<00:17,  1.78it/s] 27%|██▋       | 11/41 [00:11<00:11,  2.52it/s] 32%|███▏      | 13/41 [00:11<00:08,  3.38it/s] 37%|███▋      | 15/41 [00:11<00:06,  4.29it/s] 41%|████▏     | 17/41 [00:11<00:04,  5.28it/s] 46%|████▋     | 19/41 [00:12<00:03,  6.23it/s] 51%|█████     | 21/41 [00:12<00:02,  7.08it/s] 56%|█████▌    | 23/41 [00:12<00:02,  7.73it/s] 61%|██████    | 25/41 [00:12<00:01,  8.54it/s] 66%|██████▌   | 27/41 [00:12<00:01,  8.92it/s] 71%|███████   | 29/41 [00:13<00:01,  9.24it/s] 76%|███████▌  | 31/41 [00:13<00:01,  9.72it/s] 80%|████████  | 33/41 [00:13<00:00,  9.92it/s] 85%|████████▌ | 35/41 [00:13<00:00,  9.87it/s] 90%|█████████ | 37/41 [00:13<00:00, 10.32it/s] 95%|█████████▌| 39/41 [00:14<00:00, 10.45it/s]100%|██████████| 41/41 [00:14<00:00, 10.94it/s]100%|██████████| 41/41 [00:14<00:00,  2.88it/s]
-  0%|          | 0/41 [00:00<?, ?it/s]  2%|▏         | 1/41 [00:00<00:29,  1.36it/s]  5%|▍         | 2/41 [00:00<00:14,  2.71it/s] 10%|▉         | 4/41 [00:01<00:07,  5.12it/s] 12%|█▏        | 5/41 [00:01<00:06,  5.90it/s] 17%|█▋        | 7/41 [00:01<00:04,  7.33it/s] 22%|██▏       | 9/41 [00:01<00:03,  8.40it/s] 27%|██▋       | 11/41 [00:01<00:03,  8.99it/s] 29%|██▉       | 12/41 [00:01<00:03,  9.09it/s] 34%|███▍      | 14/41 [00:02<00:02,  9.73it/s] 39%|███▉      | 16/41 [00:02<00:02,  9.81it/s] 44%|████▍     | 18/41 [00:02<00:02,  9.80it/s] 49%|████▉     | 20/41 [00:02<00:02, 10.15it/s] 54%|█████▎    | 22/41 [00:02<00:01, 10.08it/s] 59%|█████▊    | 24/41 [00:03<00:01, 10.01it/s] 63%|██████▎   | 26/41 [00:03<00:01, 10.24it/s] 68%|██████▊   | 28/41 [00:03<00:01, 10.16it/s] 73%|███████▎  | 30/41 [00:03<00:01, 10.10it/s] 78%|███████▊  | 32/41 [00:03<00:00, 10.33it/s] 83%|████████▎ | 34/41 [00:03<00:00, 10.41it/s] 88%|████████▊ | 36/41 [00:04<00:00, 10.34it/s] 93%|█████████▎| 38/41 [00:04<00:00, 10.42it/s] 98%|█████████▊| 40/41 [00:04<00:00, 10.26it/s]100%|██████████| 41/41 [00:04<00:00,  8.72it/s]
-FID:  12.938200236231324
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 253, in calculate_fid_given_paths
-    raise RuntimeError('Invalid path: %s' % p)
-RuntimeError: Invalid path: results/newloss_ckpt_101_old_data/tryon
-  0%|          | 0/41 [00:00<?, ?it/s]  2%|▏         | 1/41 [00:04<03:09,  4.73s/it]  7%|▋         | 3/41 [00:04<00:48,  1.28s/it] 12%|█▏        | 5/41 [00:05<00:23,  1.52it/s] 17%|█▋        | 7/41 [00:05<00:14,  2.42it/s] 22%|██▏       | 9/41 [00:05<00:09,  3.50it/s] 27%|██▋       | 11/41 [00:05<00:06,  4.77it/s] 32%|███▏      | 13/41 [00:05<00:04,  6.04it/s] 37%|███▋      | 15/41 [00:05<00:03,  7.35it/s] 41%|████▏     | 17/41 [00:05<00:02,  8.65it/s] 46%|████▋     | 19/41 [00:06<00:02,  8.95it/s] 51%|█████     | 21/41 [00:06<00:02,  9.73it/s] 56%|█████▌    | 23/41 [00:06<00:01, 10.31it/s] 61%|██████    | 25/41 [00:06<00:01, 10.13it/s] 66%|██████▌   | 27/41 [00:06<00:01, 10.20it/s] 71%|███████   | 29/41 [00:07<00:01, 10.90it/s] 76%|███████▌  | 31/41 [00:07<00:00, 11.66it/s] 80%|████████  | 33/41 [00:07<00:00, 12.11it/s] 85%|████████▌ | 35/41 [00:07<00:00, 12.84it/s] 90%|█████████ | 37/41 [00:07<00:00, 12.93it/s] 95%|█████████▌| 39/41 [00:07<00:00, 13.07it/s]100%|██████████| 41/41 [00:07<00:00, 14.08it/s]100%|██████████| 41/41 [00:07<00:00,  5.19it/s]
-  0%|          | 0/41 [00:00<?, ?it/s]  2%|▏         | 1/41 [00:00<00:34,  1.17it/s]  7%|▋         | 3/41 [00:01<00:10,  3.59it/s] 12%|█▏        | 5/41 [00:01<00:06,  5.79it/s] 17%|█▋        | 7/41 [00:01<00:04,  7.58it/s] 22%|██▏       | 9/41 [00:01<00:03,  8.61it/s] 27%|██▋       | 11/41 [00:01<00:03,  9.41it/s] 32%|███▏      | 13/41 [00:01<00:02,  9.59it/s] 37%|███▋      | 15/41 [00:02<00:02,  9.78it/s] 41%|████▏     | 17/41 [00:02<00:02, 10.25it/s] 46%|████▋     | 19/41 [00:02<00:01, 11.07it/s] 51%|█████     | 21/41 [00:02<00:01, 11.91it/s] 56%|█████▌    | 23/41 [00:02<00:01, 12.31it/s] 61%|██████    | 25/41 [00:02<00:01, 12.51it/s] 66%|██████▌   | 27/41 [00:02<00:01, 12.88it/s] 71%|███████   | 29/41 [00:03<00:00, 12.99it/s] 76%|███████▌  | 31/41 [00:03<00:00, 13.35it/s] 80%|████████  | 33/41 [00:03<00:00, 13.24it/s] 85%|████████▌ | 35/41 [00:03<00:00, 13.26it/s] 90%|█████████ | 37/41 [00:03<00:00, 13.26it/s] 95%|█████████▌| 39/41 [00:03<00:00, 13.20it/s]100%|██████████| 41/41 [00:03<00:00, 13.99it/s]100%|██████████| 41/41 [00:04<00:00,  9.97it/s]
-FID:  10.866671693290414
-  0%|          | 0/41 [00:00<?, ?it/s]  2%|▏         | 1/41 [00:04<03:16,  4.91s/it]  5%|▍         | 2/41 [00:05<01:21,  2.08s/it] 10%|▉         | 4/41 [00:05<00:30,  1.21it/s] 15%|█▍        | 6/41 [00:05<00:16,  2.14it/s] 20%|█▉        | 8/41 [00:05<00:10,  3.24it/s] 24%|██▍       | 10/41 [00:05<00:06,  4.46it/s] 29%|██▉       | 12/41 [00:05<00:05,  5.78it/s] 34%|███▍      | 14/41 [00:05<00:03,  7.11it/s] 39%|███▉      | 16/41 [00:06<00:02,  8.40it/s] 44%|████▍     | 18/41 [00:06<00:02,  9.43it/s] 49%|████▉     | 20/41 [00:06<00:02, 10.39it/s] 54%|█████▎    | 22/41 [00:06<00:01, 11.17it/s] 59%|█████▊    | 24/41 [00:06<00:01, 11.68it/s] 63%|██████▎   | 26/41 [00:06<00:01, 12.07it/s] 68%|██████▊   | 28/41 [00:06<00:01, 12.37it/s] 73%|███████▎  | 30/41 [00:07<00:00, 12.61it/s] 78%|███████▊  | 32/41 [00:07<00:00, 13.15it/s] 83%|████████▎ | 34/41 [00:07<00:00, 13.15it/s] 88%|████████▊ | 36/41 [00:07<00:00, 12.80it/s] 93%|█████████▎| 38/41 [00:07<00:00, 12.02it/s] 98%|█████████▊| 40/41 [00:07<00:00, 12.09it/s]100%|██████████| 41/41 [00:08<00:00,  5.09it/s]
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:00<00:06,  1.16it/s] 33%|███▎      | 3/9 [00:01<00:01,  3.58it/s] 56%|█████▌    | 5/9 [00:01<00:00,  5.88it/s] 78%|███████▊  | 7/9 [00:01<00:00,  7.66it/s]100%|██████████| 9/9 [00:01<00:00,  9.79it/s]100%|██████████| 9/9 [00:01<00:00,  5.91it/s]
-FID:  25.8692159568362
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:04<00:38,  4.78s/it] 33%|███▎      | 3/9 [00:04<00:07,  1.29s/it] 56%|█████▌    | 5/9 [00:05<00:02,  1.50it/s] 78%|███████▊  | 7/9 [00:05<00:00,  2.37it/s]100%|██████████| 9/9 [00:05<00:00,  3.49it/s]100%|██████████| 9/9 [00:05<00:00,  1.66it/s]
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:00<00:06,  1.16it/s] 33%|███▎      | 3/9 [00:01<00:01,  3.58it/s] 56%|█████▌    | 5/9 [00:01<00:00,  5.72it/s] 78%|███████▊  | 7/9 [00:01<00:00,  7.52it/s]100%|██████████| 9/9 [00:01<00:00,  5.91it/s]
-FID:  29.09588833354738
-  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:04<00:38,  4.81s/it] 33%|███▎      | 3/9 [00:04<00:07,  1.30s/it] 56%|█████▌    | 5/9 [00:05<00:02,  1.46it/s] 67%|██████▋   | 6/9 [00:05<00:01,  1.89it/s] 78%|███████▊  | 7/9 [00:05<00:00,  2.42it/s]100%|██████████| 9/9 [00:05<00:00,  3.95it/s]100%|██████████| 9/9 [00:05<00:00,  1.63it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:05,  1.19it/s] 38%|███▊      | 3/8 [00:00<00:01,  3.68it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.87it/s] 88%|████████▊ | 7/8 [00:01<00:00,  7.66it/s]100%|██████████| 8/8 [00:01<00:00,  5.46it/s]
-FID:  29.736313735759893
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:04<00:33,  4.82s/it] 38%|███▊      | 3/8 [00:04<00:06,  1.31s/it] 62%|██████▎   | 5/8 [00:05<00:02,  1.48it/s] 88%|████████▊ | 7/8 [00:05<00:00,  2.38it/s]100%|██████████| 8/8 [00:05<00:00,  1.48it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:06,  1.14it/s] 38%|███▊      | 3/8 [00:01<00:01,  3.51it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.81it/s] 88%|████████▊ | 7/8 [00:01<00:00,  7.63it/s]100%|██████████| 8/8 [00:01<00:00,  5.31it/s]
-FID:  30.109090918711416
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 257, in calculate_fid_given_paths
-    model = InceptionV3([block_idx]).to(device)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 989, in to
-    return self._apply(convert)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  [Previous line repeated 1 more time]
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 664, in _apply
-    param_applied = fn(param)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 987, in convert
-    return t.to(device, dtype if t.is_floating_point() or t.is_complex() else None, non_blocking)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/cuda/__init__.py", line 229, in _lazy_init
-    torch._C._cuda_init()
-KeyboardInterrupt
-  0%|          | 0/8 [00:00<?, ?it/s]  0%|          | 0/8 [00:06<?, ?it/s]
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 259, in calculate_fid_given_paths
-    m1, s1 = compute_statistics_of_path(paths[0], model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 243, in compute_statistics_of_path
-    m, s = calculate_activation_statistics(files, model, batch_size,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 228, in calculate_activation_statistics
-    act = get_activations(files, model, batch_size, dims, device, num_workers)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 136, in get_activations
-    pred = model(batch)[0]
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
-    return forward_call(*input, **kwargs)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/inception.py", line 156, in forward
-    x = block(x)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
-    return forward_call(*input, **kwargs)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/container.py", line 204, in forward
-    input = module(input)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
-    return forward_call(*input, **kwargs)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torchvision/models/inception.py", line 405, in forward
-    x = self.conv(x)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
-    return forward_call(*input, **kwargs)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 463, in forward
-    return self._conv_forward(input, self.weight, self.bias)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 459, in _conv_forward
-    return F.conv2d(input, weight, bias, self.stride,
-KeyboardInterrupt
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:06<00:44,  6.36s/it] 25%|██▌       | 2/8 [00:06<00:16,  2.68s/it] 38%|███▊      | 3/8 [00:06<00:07,  1.50s/it] 62%|██████▎   | 5/8 [00:06<00:02,  1.42it/s] 88%|████████▊ | 7/8 [00:06<00:00,  2.33it/s]100%|██████████| 8/8 [00:07<00:00,  1.13it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:06,  1.08it/s] 25%|██▌       | 2/8 [00:01<00:02,  2.26it/s] 50%|█████     | 4/8 [00:01<00:00,  4.29it/s] 62%|██████▎   | 5/8 [00:01<00:00,  4.98it/s] 88%|████████▊ | 7/8 [00:01<00:00,  6.59it/s]100%|██████████| 8/8 [00:01<00:00,  7.02it/s]100%|██████████| 8/8 [00:01<00:00,  4.44it/s]
-FID:  30.109090918711416
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:06<00:42,  6.14s/it] 25%|██▌       | 2/8 [00:06<00:15,  2.59s/it] 50%|█████     | 4/8 [00:06<00:04,  1.03s/it] 75%|███████▌  | 6/8 [00:06<00:01,  1.71it/s] 88%|████████▊ | 7/8 [00:06<00:00,  2.15it/s]100%|██████████| 8/8 [00:06<00:00,  1.16it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:06,  1.14it/s] 25%|██▌       | 2/8 [00:00<00:02,  2.37it/s] 38%|███▊      | 3/8 [00:01<00:01,  3.49it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.67it/s] 75%|███████▌  | 6/8 [00:01<00:00,  6.42it/s]100%|██████████| 8/8 [00:01<00:00,  8.13it/s]100%|██████████| 8/8 [00:01<00:00,  4.78it/s]
-FID:  30.109090918711416
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:06<00:44,  6.38s/it] 38%|███▊      | 3/8 [00:06<00:08,  1.72s/it] 62%|██████▎   | 5/8 [00:06<00:02,  1.13it/s] 75%|███████▌  | 6/8 [00:06<00:01,  1.48it/s] 88%|████████▊ | 7/8 [00:06<00:00,  1.94it/s]100%|██████████| 8/8 [00:07<00:00,  1.13it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:06,  1.01it/s] 25%|██▌       | 2/8 [00:01<00:02,  2.07it/s] 38%|███▊      | 3/8 [00:01<00:01,  3.18it/s] 50%|█████     | 4/8 [00:01<00:00,  4.08it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.12it/s] 88%|████████▊ | 7/8 [00:01<00:00,  6.98it/s]100%|██████████| 8/8 [00:01<00:00,  4.26it/s]
-FID:  30.109090918711416
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:06<00:45,  6.43s/it] 38%|███▊      | 3/8 [00:06<00:08,  1.74s/it] 50%|█████     | 4/8 [00:06<00:04,  1.17s/it] 75%|███████▌  | 6/8 [00:06<00:01,  1.58it/s]100%|██████████| 8/8 [00:07<00:00,  2.45it/s]100%|██████████| 8/8 [00:07<00:00,  1.12it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:06,  1.10it/s] 25%|██▌       | 2/8 [00:01<00:02,  2.18it/s] 38%|███▊      | 3/8 [00:01<00:01,  3.27it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.04it/s] 75%|███████▌  | 6/8 [00:01<00:00,  5.82it/s]100%|██████████| 8/8 [00:01<00:00,  7.61it/s]100%|██████████| 8/8 [00:01<00:00,  4.46it/s]
-FID:  30.109090918711416
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:06<00:45,  6.46s/it] 38%|███▊      | 3/8 [00:06<00:08,  1.75s/it] 62%|██████▎   | 5/8 [00:06<00:02,  1.11it/s] 75%|███████▌  | 6/8 [00:06<00:01,  1.46it/s]100%|██████████| 8/8 [00:07<00:00,  2.36it/s]100%|██████████| 8/8 [00:07<00:00,  1.12it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:05,  1.17it/s] 25%|██▌       | 2/8 [00:00<00:02,  2.40it/s] 38%|███▊      | 3/8 [00:01<00:01,  3.64it/s] 50%|█████     | 4/8 [00:01<00:00,  4.77it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.52it/s] 75%|███████▌  | 6/8 [00:01<00:00,  6.41it/s]100%|██████████| 8/8 [00:01<00:00,  8.02it/s]100%|██████████| 8/8 [00:01<00:00,  4.66it/s]
-FID:  30.109090918711416
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:22<02:34, 22.10s/it] 38%|███▊      | 3/8 [00:22<00:28,  5.78s/it] 62%|██████▎   | 5/8 [00:22<00:08,  2.85s/it] 88%|████████▊ | 7/8 [00:22<00:01,  1.67s/it]100%|██████████| 8/8 [00:22<00:00,  2.83s/it]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:06,  1.10it/s] 25%|██▌       | 2/8 [00:01<00:02,  2.31it/s] 50%|█████     | 4/8 [00:01<00:00,  4.66it/s] 75%|███████▌  | 6/8 [00:01<00:00,  6.58it/s]100%|██████████| 8/8 [00:01<00:00,  7.73it/s]100%|██████████| 8/8 [00:01<00:00,  4.85it/s]
-FID:  30.109090918711416
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:04<00:33,  4.84s/it] 38%|███▊      | 3/8 [00:04<00:06,  1.31s/it] 62%|██████▎   | 5/8 [00:05<00:02,  1.49it/s] 88%|████████▊ | 7/8 [00:05<00:00,  2.38it/s]100%|██████████| 8/8 [00:05<00:00,  1.49it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:05,  1.20it/s] 38%|███▊      | 3/8 [00:00<00:01,  3.65it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.92it/s] 88%|████████▊ | 7/8 [00:01<00:00,  7.73it/s]100%|██████████| 8/8 [00:01<00:00,  5.46it/s]
-FID:  30.109090918711416
-Traceback (most recent call last):
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/opt/conda/envs/test/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/__main__.py", line 3, in <module>
-    pytorch_fid.fid_score.main()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 313, in main
-    fid_value = calculate_fid_given_paths(args.path,
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/pytorch_fid/fid_score.py", line 257, in calculate_fid_given_paths
-    model = InceptionV3([block_idx]).to(device)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 989, in to
-    return self._apply(convert)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 641, in _apply
-    module._apply(fn)
-  [Previous line repeated 1 more time]
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 664, in _apply
-    param_applied = fn(param)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/nn/modules/module.py", line 987, in convert
-    return t.to(device, dtype if t.is_floating_point() or t.is_complex() else None, non_blocking)
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/cuda/__init__.py", line 242, in _lazy_init
-    queued_call()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/cuda/__init__.py", line 124, in _check_capability
-    for d in range(device_count()):
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/cuda/__init__.py", line 528, in device_count
-    nvml_count = _device_count_nvml()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/cuda/__init__.py", line 514, in _device_count_nvml
-    raw_cnt = _raw_device_count_nvml()
-  File "/opt/conda/envs/test/lib/python3.10/site-packages/torch/cuda/__init__.py", line 495, in _raw_device_count_nvml
-    rc = nvml_h.nvmlInit()
-KeyboardInterrupt
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:06<00:45,  6.44s/it] 25%|██▌       | 2/8 [00:06<00:16,  2.71s/it] 38%|███▊      | 3/8 [00:06<00:07,  1.53s/it] 62%|██████▎   | 5/8 [00:06<00:02,  1.38it/s] 75%|███████▌  | 6/8 [00:06<00:01,  1.82it/s]100%|██████████| 8/8 [00:07<00:00,  2.93it/s]100%|██████████| 8/8 [00:07<00:00,  1.11it/s]
-  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:05,  1.18it/s] 38%|███▊      | 3/8 [00:01<00:01,  3.54it/s] 50%|█████     | 4/8 [00:01<00:00,  4.53it/s] 62%|██████▎   | 5/8 [00:01<00:00,  5.50it/s] 88%|████████▊ | 7/8 [00:01<00:00,  7.42it/s]100%|██████████| 8/8 [00:01<00:00,  5.01it/s]
-FID:  30.109090918711416

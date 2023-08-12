@@ -9,16 +9,17 @@ style_dt = (Profile(), Profile(), Profile(), Profile(), Profile(), Profile(), Pr
 
 
 def apply_offset(offset):
-
+    # offset(B x 2 x H x W)
     sizes = list(offset.size()[2:])
     grid_list = torch.meshgrid([torch.arange(size, device=offset.device) for size in sizes])
     grid_list = reversed(grid_list)
+    # Two cordinates grid tensor
 
     grid_list = [grid.float().unsqueeze(0) + offset[:, dim, ...]
-        for dim, grid in enumerate(grid_list)]
+        for dim, grid in enumerate(grid_list)] # 2 tensor (B x H x W): [0: size - 1]
 
     grid_list = [grid / ((size - 1.0) / 2.0) - 1.0
-        for grid, size in zip(grid_list, reversed(sizes))] 
+        for grid, size in zip(grid_list, reversed(sizes))] # 2 tensor (B x H x W): [-1, 1]
 
     return torch.stack(grid_list, dim=-1)
 
@@ -150,7 +151,7 @@ class AFlowNet(nn.Module):
 
     def forward(self, x, x_warps, x_conds, warp_feature=True):
         last_flow = None
-
+        
         for i in range(len(x_warps)):
             x_warp = x_warps[len(x_warps) - 1 - i]
             x_cond = x_conds[len(x_warps) - 1 - i]
@@ -163,7 +164,8 @@ class AFlowNet(nn.Module):
                 x_warp_after = x_warp
 
             # with style_dt[0]:
-            tenCorrelation = F.leaky_relu(input=correlation.FunctionCorrelation(tenFirst=x_warp_after, tenSecond=x_cond, intStride=1), negative_slope=0.1, inplace=False)
+            tenCorrelation  = correlation.FunctionCorrelation(tenFirst=x_warp_after, tenSecond=x_cond, intStride=1)
+            tenCorrelation = F.leaky_relu(input=tenCorrelation, negative_slope=0.1, inplace=False)
             flow = self.netMain[i](tenCorrelation)
 
             # with style_dt[5]:
