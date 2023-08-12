@@ -1,0 +1,5 @@
+ipdb
+opencv-python
+pillow
+torch
+tensorboardX
