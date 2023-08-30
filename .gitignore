@@ -1,10 +1,5 @@
 # Proj
-results/
-sample/
 runs/
-checkpoints/
-artifact/
-video/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -137,10 +132,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# Dataset, models
-images/
-dataset/
-pretrained/
-video/
-output/
