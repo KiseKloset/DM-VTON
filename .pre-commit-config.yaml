@@ -1,0 +1,49 @@
+# Pre-commit hooks
+
+default_language_version:
+  python: python3.10
+
+# Define bot property if installed via https://github.com/marketplace/pre-commit-ci
+ci:
+  autofix_prs: true
+  autofix_commit_msg: '🎨 [pre-commit.ci] auto fixes from pre-commit hooks'
+  autoupdate_commit_msg: '⬆️ [pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: monthly
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: check-docstring-first
+      - id: trailing-whitespace
+      - id: pretty-format-json
+        args: [--autofix, --indent=4, --no-ensure-ascii, --no-sort-keys]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.8.0
+    hooks:
+      - id: pyupgrade
+        name: Upgrade code
+        args: [ --py37-plus ]
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        name: PEP8 formatting
+        args: [ --skip-string-normalization, --line-length=100]
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: I-sort imports
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        name: PEP8 checker
