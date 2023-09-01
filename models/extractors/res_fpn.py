@@ -1,19 +1,18 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels):
-        super(ResBlock, self).__init__()
+        super().__init__()
         self.block = nn.Sequential(
             nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, bias=False)
-            )
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, bias=False),
+        )
 
     def forward(self, x):
         return self.block(x) + x
@@ -21,36 +20,35 @@ class ResBlock(nn.Module):
 
 class DownSample(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(DownSample, self).__init__()
-        self.block=  nn.Sequential(
+        super().__init__()
+        self.block = nn.Sequential(
             nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1, bias=False)
-            )
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1, bias=False),
+        )
 
     def forward(self, x):
         return self.block(x)
 
 
 class FeatureEncoder(nn.Module):
-    def __init__(self, in_channels, chns=[64,128,256,256,256]):
+    def __init__(self, in_channels, chns=[64, 128, 256, 256, 256]):
         # in_channels = 3 for images, and is larger (e.g., 17+1+1) for agnositc representation
-        super(FeatureEncoder, self).__init__()
+        super().__init__()
         self.encoders = []
         for i, out_chns in enumerate(chns):
             if i == 0:
-                encoder = nn.Sequential(DownSample(in_channels, out_chns),
-                                        ResBlock(out_chns),
-                                        ResBlock(out_chns))
+                encoder = nn.Sequential(
+                    DownSample(in_channels, out_chns), ResBlock(out_chns), ResBlock(out_chns)
+                )
             else:
-                encoder = nn.Sequential(DownSample(chns[i-1], out_chns),
-                                         ResBlock(out_chns),
-                                         ResBlock(out_chns))
-            
+                encoder = nn.Sequential(
+                    DownSample(chns[i - 1], out_chns), ResBlock(out_chns), ResBlock(out_chns)
+                )
+
             self.encoders.append(encoder)
 
         self.encoders = nn.ModuleList(self.encoders)
-
 
     def forward(self, x):
         encoder_features = []
@@ -59,12 +57,13 @@ class FeatureEncoder(nn.Module):
             encoder_features.append(x)
         return encoder_features
 
+
 class RefinePyramid(nn.Module):
-    def __init__(self, chns=[64,128,256,256,256], fpn_dim=256):
-        super(RefinePyramid, self).__init__()
+    def __init__(self, chns=[64, 128, 256, 256, 256], fpn_dim=256):
+        super().__init__()
         self.chns = chns
 
-        # adaptive 
+        # adaptive
         self.adaptive = []
         for in_chns in list(reversed(chns)):
             adaptive_layer = nn.Conv2d(in_chns, fpn_dim, kernel_size=1)
@@ -79,7 +78,7 @@ class RefinePyramid(nn.Module):
 
     def forward(self, x):
         conv_ftr_list = x
-        
+
         feature_list = []
         last_feature = None
         for i, conv_ftr in enumerate(list(reversed(conv_ftr_list))):
@@ -94,22 +93,3 @@ class RefinePyramid(nn.Module):
             feature_list.append(feature)
 
         return tuple(reversed(feature_list))
-
-
-if __name__ == "__main__":
-    import time
-    device = torch.device("cuda:0")
-    num_filters = [64,128,256,256,256]
-    cond_features = FeatureEncoder(3, num_filters).to(device)
-    image_FPN = RefinePyramid(num_filters).to(device)
-    cond_features.eval()
-    image_FPN.eval()
-    x = torch.rand(1, 3, 256, 192).to(device)
-    with torch.no_grad():
-        out = image_FPN(cond_features(x))
-        start = time.time()
-        for i in range(1000):
-            out = image_FPN(cond_features(x))
-        end = time.time()
-    print([i.shape for i in out])
-    print((end - start) / 1000)

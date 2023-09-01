@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dataloader.viton_dataset import LoadVITONDataset
-from models.mobile_unet_generator import MobileNetV2_unet
-from models.pfafn.afwm_test import AFWM
+from models.generators.mobile_unet import MobileNetV2_unet
+from models.warp_modules.mobile_afwm import MobileAFWM as AFWM
 from opt.test_opt import TestOptions
 from utils.general import Profile, print_log, warm_up
 from utils.metrics.lpips.lpips import calculate_lpips_given_paths
@@ -23,9 +23,10 @@ def run_test_pf(
 ):
     warp_model, gen_model = models['warp'], models['gen']
     metrics = {}
-
-    tryon_dir = Path(save_dir) / 'results' / 'tryon'
-    visualize_dir = Path(save_dir) / 'results' / 'visualize'
+    
+    result_dir = Path(save_dir) / 'results'
+    tryon_dir = result_dir / 'tryon'
+    visualize_dir = result_dir / 'visualize'
     tryon_dir.mkdir(parents=True, exist_ok=True)
     visualize_dir.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +50,7 @@ def run_test_pf(
             # Warp
             with dt[1]:
                 with cupy.cuda.Device(int(device.split(':')[-1])):
-                    flow_out = warp_model(real_image, clothes)
+                    flow_out = warp_model(real_image, clothes, phase='test')
                     (
                         warped_cloth,
                         last_flow,
@@ -105,7 +106,9 @@ def run_test_pf(
     lpips = calculate_lpips_given_paths(paths=[str(img_dir), str(tryon_dir)], device=device)
 
     if not save_img:
-        shutil.rmtree(Path(save_dir) / 'results')
+        shutil.rmtree(result_dir)
+    else:
+        print(f'Results are saved at {result_dir}')
 
     # FID
     metrics['fid'] = fid
@@ -140,7 +143,6 @@ def main(opt):
     warp_ckpt = get_ckpt(opt.pf_warp_checkpoint)
     load_ckpt(warp_model, warp_ckpt)
     print_log(log_path, f'Load pretrained parser-free warp from {opt.pf_warp_checkpoint}')
-    # from SRMGNLastHope.models.mobile_unet_generator import MobileNetV2_unet as LMobileNetV2_unet
     gen_model = MobileNetV2_unet(7, 4).to(device)
     gen_model.eval()
     gen_ckpt = get_ckpt(opt.pf_gen_checkpoint)

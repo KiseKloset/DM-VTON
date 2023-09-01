@@ -9,10 +9,10 @@ import torchvision as tv
 from torch.utils.data import DataLoader
 
 from dataloader.viton_dataset import LoadVITONDataset
-from models.afwm_pb import AFWM as PBAFWM
-from models.mobile_unet_generator import MobileNetV2_unet
-from models.networks import ResUnetGenerator
-from models.pfafn.afwm import AFWM
+from models.generators.mobile_unet import MobileNetV2_unet
+from models.generators.res_unet import ResUnetGenerator
+from models.warp_modules.mobile_afwm import MobileAFWM as AFWM
+from models.warp_modules.style_afwm import StyleAFWM as PBAFWM
 from opt.train_opt import TrainOptions
 from utils.general import print_log
 from utils.torch_utils import get_ckpt, load_ckpt, select_device

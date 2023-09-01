@@ -1,39 +1,114 @@
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-instance-attributes
+import copy
 
 import torch
-from torch import nn
+import torch.nn as nn
 
-from .select import get_norm_layer, get_activ_layer
+
+def extract_name_kwargs(obj):
+    if isinstance(obj, dict):
+        obj = copy.copy(obj)
+        name = obj.pop('name')
+        kwargs = obj
+    else:
+        name = obj
+        kwargs = {}
+
+    return (name, kwargs)
+
+
+def get_norm_layer(norm, features):
+    name, kwargs = extract_name_kwargs(norm)
+
+    if name is None:
+        return nn.Identity(**kwargs)
+
+    if name == 'layer':
+        return nn.LayerNorm((features,), **kwargs)
+
+    if name == 'batch':
+        return nn.BatchNorm2d(features, **kwargs)
+
+    if name == 'instance':
+        return nn.InstanceNorm2d(features, **kwargs)
+
+    raise ValueError("Unknown Layer: '%s'" % name)
+
+
+def get_norm_layer_fn(norm):
+    return lambda features: get_norm_layer(norm, features)
+
+
+def get_activ_layer(activ):
+    name, kwargs = extract_name_kwargs(activ)
+
+    if (name is None) or (name == 'linear'):
+        return nn.Identity()
+
+    if name == 'gelu':
+        return nn.GELU(**kwargs)
+
+    if name == 'relu':
+        return nn.ReLU(**kwargs)
+
+    if name == 'leakyrelu':
+        return nn.LeakyReLU(**kwargs)
+
+    if name == 'tanh':
+        return nn.Tanh()
+
+    if name == 'sigmoid':
+        return nn.Sigmoid()
+
+    raise ValueError("Unknown activation: '%s'" % name)
+
+
+def select_optimizer(parameters, optimizer):
+    name, kwargs = extract_name_kwargs(optimizer)
+
+    if name == 'AdamW':
+        return torch.optim.AdamW(parameters, **kwargs)
+
+    if name == 'Adam':
+        return torch.optim.Adam(parameters, **kwargs)
+
+    raise ValueError("Unknown optimizer: '%s'" % name)
+
+
+def select_loss(loss):
+    name, kwargs = extract_name_kwargs(loss)
+
+    if name.lower() in ['l1', 'mae']:
+        return nn.L1Loss(**kwargs)
+
+    if name.lower() in ['l2', 'mse']:
+        return nn.MSELoss(**kwargs)
+
+    raise ValueError("Unknown loss: '%s'" % name)
+
 
 def calc_tokenized_size(image_shape, token_size):
     # image_shape : (C, H, W)
     # token_size  : (H_t, W_t)
     if image_shape[1] % token_size[0] != 0:
         raise ValueError(
-            "Token width %d does not divide image width %d" % (
-                token_size[0], image_shape[1]
-            )
+            "Token width %d does not divide image width %d" % (token_size[0], image_shape[1])
         )
 
     if image_shape[2] % token_size[1] != 0:
         raise ValueError(
-            "Token height %d does not divide image height %d" % (
-                token_size[1], image_shape[2]
-            )
+            "Token height %d does not divide image height %d" % (token_size[1], image_shape[2])
         )
 
     # result : (N_h, N_w)
     return (image_shape[1] // token_size[0], image_shape[2] // token_size[1])
+
 
 def img_to_tokens(image_batch, token_size):
     # image_batch : (N, C, H, W)
     # token_size  : (H_t, W_t)
 
     # result : (N, C, N_h, H_t, W)
-    result = image_batch.view(
-        (*image_batch.shape[:2], -1, token_size[0], image_batch.shape[3])
-    )
+    result = image_batch.view((*image_batch.shape[:2], -1, token_size[0], image_batch.shape[3]))
 
     # result : (N, C, N_h, H_t, W       )
     #       -> (N, C, N_h, H_t, N_w, W_t)
@@ -44,6 +119,7 @@ def img_to_tokens(image_batch, token_size):
     result = result.permute((0, 2, 4, 1, 3, 5))
 
     return result
+
 
 def img_from_tokens(tokens):
     # tokens : (N, N_h, N_w, C, H_t, W_t)
@@ -62,9 +138,9 @@ def img_from_tokens(tokens):
 
     return result
 
-class PositionWiseFFN(nn.Module):
 
-    def __init__(self, features, ffn_features, activ = 'gelu', **kwargs):
+class PositionWiseFFN(nn.Module):
+    def __init__(self, features, ffn_features, activ='gelu', **kwargs):
         super().__init__(**kwargs)
 
         self.net = nn.Sequential(
@@ -76,11 +152,10 @@ class PositionWiseFFN(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-class TransformerBlock(nn.Module):
 
+class TransformerBlock(nn.Module):
     def __init__(
-        self, features, ffn_features, n_heads, activ = 'gelu', norm = None,
-        rezero = True, **kwargs
+        self, features, ffn_features, n_heads, activ='gelu', norm=None, rezero=True, **kwargs
     ):
         super().__init__(**kwargs)
 
@@ -88,12 +163,12 @@ class TransformerBlock(nn.Module):
         self.atten = nn.MultiheadAttention(features, n_heads)
 
         self.norm2 = get_norm_layer(norm, features)
-        self.ffn   = PositionWiseFFN(features, ffn_features, activ)
+        self.ffn = PositionWiseFFN(features, ffn_features, activ)
 
         self.rezero = rezero
 
         if rezero:
-            self.re_alpha = nn.Parameter(torch.zeros((1, )))
+            self.re_alpha = nn.Parameter(torch.zeros((1,)))
         else:
             self.re_alpha = 1
 
@@ -104,32 +179,32 @@ class TransformerBlock(nn.Module):
         y1 = self.norm1(x)
         y1, _atten_weights = self.atten(y1, y1, y1)
 
-        y  = x + self.re_alpha * y1
+        y = x + self.re_alpha * y1
 
         # Step 2: PositionWise Feed Forward Network
         y2 = self.norm2(y)
         y2 = self.ffn(y2)
 
-        y  = y + self.re_alpha * y2
+        y = y + self.re_alpha * y2
 
         return y
 
     def extra_repr(self):
-        return 're_alpha = %e' % (self.re_alpha, )
+        return f're_alpha = {self.re_alpha:e}'
+
 
 class TransformerEncoder(nn.Module):
-
     def __init__(
-        self, features, ffn_features, n_heads, n_blocks, activ, norm,
-        rezero = True, **kwargs
+        self, features, ffn_features, n_heads, n_blocks, activ, norm, rezero=True, **kwargs
     ):
         super().__init__(**kwargs)
 
-        self.encoder = nn.Sequential(*[
-            TransformerBlock(
-                features, ffn_features, n_heads, activ, norm, rezero
-            ) for _ in range(n_blocks)
-        ])
+        self.encoder = nn.Sequential(
+            *[
+                TransformerBlock(features, ffn_features, n_heads, activ, norm, rezero)
+                for _ in range(n_blocks)
+            ]
+        )
 
     def forward(self, x):
         # x : (N, L, features)
@@ -143,47 +218,45 @@ class TransformerEncoder(nn.Module):
 
         return result
 
+
 class FourierEmbedding(nn.Module):
     # arXiv: 2011.13775
 
     def __init__(self, features, height, width, **kwargs):
         super().__init__(**kwargs)
         self.projector = nn.Linear(2, features)
-        self._height   = height
-        self._width    = width
+        self._height = height
+        self._width = width
 
     def forward(self, y, x):
         # x : (N, L)
         # y : (N, L)
-        x_norm = 2 * x / (self._width  - 1) - 1
+        x_norm = 2 * x / (self._width - 1) - 1
         y_norm = 2 * y / (self._height - 1) - 1
 
         # z : (N, L, 2)
-        z = torch.cat((x_norm.unsqueeze(2), y_norm.unsqueeze(2)), dim = 2)
+        z = torch.cat((x_norm.unsqueeze(2), y_norm.unsqueeze(2)), dim=2)
 
         return torch.sin(self.projector(z))
 
-class ViTInput(nn.Module):
 
-    def __init__(
-        self, input_features, embed_features, features, height, width,
-        **kwargs
-    ):
+class ViTInput(nn.Module):
+    def __init__(self, input_features, embed_features, features, height, width, **kwargs):
         super().__init__(**kwargs)
-        self._height   = height
-        self._width    = width
+        self._height = height
+        self._width = width
 
         x = torch.arange(width).to(torch.float32)
         y = torch.arange(height).to(torch.float32)
 
-        x, y   = torch.meshgrid(x, y)
+        x, y = torch.meshgrid(x, y)
         self.x = x.reshape((1, -1))
         self.y = y.reshape((1, -1))
 
         self.register_buffer('x_const', self.x)
         self.register_buffer('y_const', self.y)
 
-        self.embed  = FourierEmbedding(embed_features, height, width)
+        self.embed = FourierEmbedding(embed_features, height, width)
         self.output = nn.Linear(embed_features + input_features, features)
 
     def forward(self, x):
@@ -197,24 +270,36 @@ class ViTInput(nn.Module):
         embed = embed.expand((x.shape[0], *embed.shape[1:]))
 
         # result : (N, L, embed_features + input_features)
-        result = torch.cat([embed, x], dim = 2)
+        result = torch.cat([embed, x], dim=2)
 
         # (N, L, features)
         return self.output(result)
 
-class PixelWiseViT(nn.Module):
 
+class PixelWiseViT(nn.Module):
     def __init__(
-        self, features, n_heads, n_blocks, ffn_features, embed_features,
-        activ, norm, image_shape, rezero = True, **kwargs
+        self,
+        features,
+        n_heads,
+        n_blocks,
+        ffn_features,
+        embed_features,
+        activ,
+        norm,
+        image_shape,
+        rezero=True,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
         self.image_shape = image_shape
 
         self.trans_input = ViTInput(
-            image_shape[0], embed_features, features,
-            image_shape[1], image_shape[2],
+            image_shape[0],
+            embed_features,
+            features,
+            image_shape[1],
+            image_shape[2],
         )
 
         self.encoder = TransformerEncoder(
@@ -250,4 +335,3 @@ class PixelWiseViT(nn.Module):
         result = otokens.view(*otokens.shape[:2], *self.image_shape[1:])
 
         return result
-

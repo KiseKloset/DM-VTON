@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dataloader.viton_dataset import LoadVITONDataset
-from models.mobile_unet_generator import MobileNetV2_unet
-from models.pfafn.afwm import AFWM
+from models.generators.mobile_unet import MobileNetV2_unet
+from models.warp_modules.mobile_afwm import MobileAFWM as AFWM
 from opt.test_opt import TestOptions
 from utils.general import print_log
 from utils.metrics.pytorch_fid.fid_score import calculate_fid_given_paths

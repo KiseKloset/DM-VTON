@@ -12,9 +12,8 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
 from dataloader.viton_dataset import LoadVITONDataset
-from models.afwm_pb import AFWM as PBAFWM
-from models.losses.tv_loss import TVLoss
-from models.losses.vgg_loss import VGGLoss
+from losses import TVLoss, VGGLoss
+from models.warp_modules.style_afwm import StyleAFWM as PBAFWM
 from opt.train_opt import TrainOptions
 from utils.general import AverageMeter, print_log
 from utils.lr_utils import MyLRScheduler
