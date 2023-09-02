@@ -13,7 +13,7 @@ from models.generators.mobile_unet import MobileNetV2_unet
 from models.warp_modules.mobile_afwm import MobileAFWM as AFWM
 from opt.test_opt import TestOptions
 from utils.general import print_log
-from utils.metrics.pytorch_fid.fid_score import calculate_fid_given_paths
+from utils.metrics import calculate_fid_given_paths
 from utils.torch_utils import get_ckpt, load_ckpt, select_device
 
 

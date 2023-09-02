@@ -13,8 +13,7 @@ from models.generators.mobile_unet import MobileNetV2_unet
 from models.warp_modules.mobile_afwm import MobileAFWM as AFWM
 from opt.test_opt import TestOptions
 from utils.general import Profile, print_log, warm_up
-from utils.metrics.lpips.lpips import calculate_lpips_given_paths
-from utils.metrics.pytorch_fid.fid_score import calculate_fid_given_paths
+from utils.metrics import calculate_fid_given_paths, calculate_lpips_given_paths
 from utils.torch_utils import get_ckpt, load_ckpt, select_device
 
 
@@ -23,7 +22,7 @@ def run_test_pf(
 ):
     warp_model, gen_model = models['warp'], models['gen']
     metrics = {}
-    
+
     result_dir = Path(save_dir) / 'results'
     tryon_dir = result_dir / 'tryon'
     visualize_dir = result_dir / 'visualize'
@@ -105,11 +104,6 @@ def run_test_pf(
     )
     lpips = calculate_lpips_given_paths(paths=[str(img_dir), str(tryon_dir)], device=device)
 
-    if not save_img:
-        shutil.rmtree(result_dir)
-    else:
-        print(f'Results are saved at {result_dir}')
-
     # FID
     metrics['fid'] = fid
     metrics['lpips'] = lpips
@@ -120,14 +114,19 @@ def run_test_pf(
     metrics['fps'] = 1000 / sum(t[1:])  # Data loading time is not included
     print_log(
         log_path,
-        f'Speed: %.1fms all, %.1fms pre-process, %.1fms warp, %.1fms gen \
-        per image at shape {real_image.size()}'
+        f'Speed: %.1fms (%.1fms pre-process, %.1fms warp, %.1fms gen) per image {real_image.size()}'
         % t,
     )
 
     # Log
     metrics_str = 'Metric, {}'.format(', '.join([f'{k}: {v}' for k, v in metrics.items()]))
     print_log(log_path, metrics_str)
+
+    # Remove results if not save
+    if not save_img:
+        shutil.rmtree(result_dir)
+    else:
+        print_log(log_path, f'Results are saved at {result_dir}')
 
     return metrics
 
