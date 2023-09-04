@@ -1,10 +1,5 @@
 # Proj
-results/
-sample/
 runs/
-checkpoints/
-artifact/
-video/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -13,8 +8,6 @@ __pycache__/
 
 # C extensions
 *.so
-
-*.pth
 
 # Distribution / packaging
 .Python
@@ -137,10 +130,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# Dataset, models
-images/
-dataset/
-pretrained/
-video/
-output/
