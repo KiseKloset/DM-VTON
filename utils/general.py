@@ -1,16 +1,17 @@
 import contextlib
-import os
 import time
-from PIL import Image, ImageDraw
 
 import torch
 import yaml
 from pathlib import Path
-from torch import Tensor
 
 
 class Profile(contextlib.ContextDecorator):
-    # YOLOv5 Profile class. Usage: @Profile() decorator or 'with Profile():' context manager
+    """
+    YOLOv5 Profile class. 
+    Usage: 'with Profile():' or '@Profile()' decorator
+    """
+
     def __init__(self, device=None, t=0.0):
         self.device = device
         self.t = t
@@ -30,8 +31,12 @@ class Profile(contextlib.ContextDecorator):
         return time.time()
     
 
-# https://github.dev/PaddlePaddle/PaddleOCR/ppocr/utils/utility.py
 class AverageMeter:
+    """
+    Computes and stores the average and current value
+    Source: https://github.dev/PaddlePaddle/PaddleOCR/ppocr/utils/utility.py
+    """
+    
     def __init__(self):
         self.reset()
 
@@ -81,10 +86,10 @@ def increment_path(path: str, exist_ok: bool = False, sep: str = '') -> Path:
     return path
 
 
-def warm_up(model, dummy_input):
+def warm_up(model, **dummy_input):
     with torch.no_grad():
         for _ in range(10):
-            _ = model(dummy_input)
+            _ = model(**dummy_input)
 
 
 def print_log(log_path, content, to_print=True):
