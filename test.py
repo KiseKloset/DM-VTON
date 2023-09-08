@@ -99,7 +99,7 @@ def run_test_pf(
     mem_bufs = sum([buf.nelement()*buf.element_size() for buf in pipeline.buffers()])
     metrics['mem'] = mem_params + mem_bufs # in bytes
 
-    ops, params = ops_profile(pipeline, (*dummy_input.values(), ))
+    ops, params = ops_profile(pipeline, (*dummy_input.values(), ), verbose=False)
     metrics['ops'] = ops
     metrics['params'] = params
 
