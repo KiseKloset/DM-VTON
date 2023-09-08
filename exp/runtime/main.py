@@ -1,29 +1,27 @@
-import numpy as np
-import torch
-import cupy
-import os
-
-from tqdm import tqdm
-from utils import Profile
-from thop import profile as ops_profile
 import json
+
+import cupy
+import torch
+from thop import profile as ops_profile
+from tqdm import tqdm
 
 # from ACGPN.raw import ACGPN
 # from WUTON.raw import WUTON
 # from RMGN.raw import RMGN
 # from PFAFN.raw import PFAFN
 # from FlowStyle.raw import FlowStyle
-# from SRMGN.raw import SRMGN
+from SRMGN.raw import SRMGN
 # from CDGNet.raw import CDGNet
 # from ShineOn.raw import ShineOn
 # from SDAFN.raw import SDAFN
 # from CPVTON.raw import CPVTON
 # from CVTON.raw import CVTON
 # from ClothFlow.raw import ClothFlow
-from SRMGNLastHope.raw import SRMGNLastHope
+# from SRMGNLastHope.raw import SRMGNLastHope
 # from ViTPose.configs.ViTPose_base_coco_256x192 import model as model_cfg
-# from ViTPose.models.model import ViTPose 
+# from ViTPose.models.model import ViTPose
 # from DensePose.raw import DensePose
+from utils import Profile
 
 DEVICE_ID = 0
 DEVICE = f"cuda:{DEVICE_ID}"
@@ -45,11 +43,11 @@ DENSEPOSE_ID = 14
 LAST_HOPE_ID = 15
 
 MODELS = {
-    # WUTON_ID: WUTON(), 
+    # WUTON_ID: WUTON(),
     # RMGN_ID: RMGN(),
     # PFAFN_ID: PFAFN(),
     # FLOW_STYLE_ID: FlowStyle(),
-    # SRMGN_ID: SRMGN(),
+    SRMGN_ID: SRMGN(),
     # CDGNET_ID: CDGNet(20, (473, 473)),
     # SHINE_ON_ID: ShineOn(),
     # SDAFN_ID: SDAFN(ref_in_channel=6),
@@ -59,11 +57,11 @@ MODELS = {
     # CLOTHFLOW_ID: ClothFlow(),
     # CVTON_ID: CVTON(DEVICE),
     # DENSEPOSE_ID: DensePose(),
-    LAST_HOPE_ID: SRMGNLastHope()
+    # LAST_HOPE_ID: SRMGNLastHope()
 }
 
-PROFILES = { i : Profile() for i in MODELS }
-RESULTS = { i : {} for i in MODELS }
+PROFILES = {i: Profile() for i in MODELS}
+RESULTS = {i: {} for i in MODELS}
 
 
 def gen_input(model_id, device):
@@ -85,9 +83,9 @@ def gen_input(model_id, device):
         return [torch.rand(1, 3, 256, 192).to(device), torch.rand(1, 7, 256, 192).to(device)]
 
     elif model_id == SDAFN_ID:
-        ref_input = torch.rand(1,6,256,192).to(device)
-        source_image = torch.rand(1,3,256,192).to(device)
-        ref_image = torch.rand(1,3,256,192).to(device)
+        ref_input = torch.rand(1, 6, 256, 192).to(device)
+        source_image = torch.rand(1, 3, 256, 192).to(device)
+        ref_image = torch.rand(1, 3, 256, 192).to(device)
         return [ref_input, source_image, ref_image]
 
     elif model_id == VITPOSE_ID:
@@ -110,7 +108,7 @@ def gen_input(model_id, device):
         inputB = torch.rand(1, 1, 256, 192).to(device)
         inputC = torch.rand(1, 1, 256, 192).to(device)
         return [inputA, inputB, inputC]
-    
+
     elif model_id == CVTON_ID:
         image = torch.rand(1, 3, 256, 192).to(device)
         cloth_image = torch.rand(1, 3, 256, 192).to(device)
@@ -119,20 +117,18 @@ def gen_input(model_id, device):
         body_seg_transf = torch.rand(1, 1, 256, 192).to(device)
         densepose_seg_transf = torch.rand(1, 1, 256, 192).to(device)
 
-        return [{
-            "image": {
-                "I": image,
-                "C_t": cloth_image,
-                "I_m": masked_image 
-            },
-            "cloth_label": cloth_seg_transf,
-            "body_label": body_seg_transf,
-            "densepose_label": densepose_seg_transf,
-            "name": "abcxyz",
-            "agnostic": "",
-            "original_size": [256, 192],
-            "label_centroid": None
-        }]
+        return [
+            {
+                "image": {"I": image, "C_t": cloth_image, "I_m": masked_image},
+                "cloth_label": cloth_seg_transf,
+                "body_label": body_seg_transf,
+                "densepose_label": densepose_seg_transf,
+                "name": "abcxyz",
+                "agnostic": "",
+                "original_size": [256, 192],
+                "label_centroid": None,
+            }
+        ]
 
     elif model_id == DENSEPOSE_ID:
         height = 256
@@ -141,25 +137,27 @@ def gen_input(model_id, device):
         return [{"image": image, "height": height, "width": width}]
 
 
-def run_once(model_id, device, measure_time = False):
-    device = "cpu"
+def run_once(model_id, device, measure_time=False):
     model = MODELS[model_id].eval().to(device)
+    mem_params = sum([param.nelement() * param.element_size() for param in model.parameters()])
+    mem_bufs = sum([buf.nelement() * buf.element_size() for buf in model.buffers()])
+    mem = mem_params + mem_bufs  # in bytes
     time_profile = PROFILES[model_id]
     _input = gen_input(model_id, device)
 
-    if not measure_time:
-        torch.onnx.export(
-                model,
-                tuple(_input),
-                "mobile.onnx",
-                export_params=True,
-                verbose=False,
-                opset_version=16)
+    if measure_time:
+        with time_profile:
+            model(*_input)
+    else:
+        ops, params = ops_profile(model, (*_input,))
+        RESULTS[model_id]["ops"] = ops
+        RESULTS[model_id]["params"] = params
+        RESULTS[model_id]["size"] = mem
 
 
 if __name__ == "__main__":
     cupy.cuda.Device(DEVICE_ID).use()
-    N = 100
+    N = 1000
     for model_id in MODELS:
         with torch.no_grad():
             run_once(model_id, DEVICE, False)
@@ -167,7 +165,7 @@ if __name__ == "__main__":
                 run_once(model_id, DEVICE, True)
 
     for i, profile in PROFILES.items():
-        RESULTS[i]["time"] = profile.t / N * 1E3 
+        RESULTS[i]["time"] = profile.t / N * 1e3
 
     with open("results.json", "w") as f:
         json.dump(RESULTS, f)
