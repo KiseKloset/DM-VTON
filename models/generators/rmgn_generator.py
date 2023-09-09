@@ -156,19 +156,16 @@ class AADGenerator(nn.Module):
 
 
 class RMGNGenerator(BaseModel):
-    def __init__(self, multilevel=False, predmask=True):
+    def __init__(self, in_person_nc=3, in_clothes_nc=4, nf=64, multilevel=False, predmask=True):
         super().__init__()
-        nf = 64
-        in_nc_clothes = 4
-        in_nc_person = 3
         out_nc = 4
 
         SR_scale = 1
         aei_encoder_head = False
         head_layers = int(np.log2(SR_scale)) + 1 if aei_encoder_head or SR_scale > 1 else 0
 
-        self.inp_encoder = AttrEncoder(nf=nf, in_nc=in_nc_person, head_layers=head_layers)
-        self.ref_encoder = AttrEncoder(nf=nf, in_nc=in_nc_clothes, head_layers=head_layers)
+        self.inp_encoder = AttrEncoder(nf=nf, in_nc=in_person_nc, head_layers=head_layers)
+        self.ref_encoder = AttrEncoder(nf=nf, in_nc=in_clothes_nc, head_layers=head_layers)
         self.generator = AADGenerator(
             nf=nf, out_nc=out_nc, SR_scale=SR_scale, multilevel=multilevel, predmask=predmask
         )
