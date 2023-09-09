@@ -5,16 +5,13 @@
 
   [[`Paper`](https://arxiv.org/abs/2308.13798)]
   [[`Colab Notebook`](https://colab.research.google.com/drive/1oLg0qe0nqLuIeaklzwbkk3IOKmMb0clk)]
-  [[`Web Demo`](https://github.com/KiseKloset/KiseKloset)] 
+  [[`Web Demo`](https://github.com/KiseKloset/KiseKloset)]
 
   <img src="https://raw.githubusercontent.com/KiseKloset/DM-VTON/assets/promotion.png" width="35%"><br>
-  
 
   This is official pytorch implementation of [DM-VTON: Distilled Mobile Real-time Virtual Try-On](https://arxiv.org/abs/2308.13798). DM-VTON is designed to be fast, lightweight, while maintaining the quality of the try-on image. It can achieve 40 frames per second on a single Nvidia Tesla T4 GPU and only take up 37 MB of memory.
 
   <img src="https://raw.githubusercontent.com/KiseKloset/DM-VTON/assets/model_diagram.png" class="left" width='100%'>
-
-  <!-- <img src="https://raw.githubusercontent.com/KiseKloset/DM-VTON/assets/demo.png" class="left" width='100%'> -->
 
 </div>
 
@@ -45,17 +42,17 @@ Dataset folder structure:
 │   │   ├── test_edge
 |   ├── VITON_traindata
 |   |   ├── train_pairs.txt
-|   |   ├── train_img       
+|   |   ├── train_img
 │   │   │   ├── [000003_0.jpg | ...]  # Person
-│   │   ├── train_color     
+│   │   ├── train_color
 │   │   │   ├── [000003_1.jpg | ...]  # Garment
-│   │   ├── train_edge      
+│   │   ├── train_edge
 │   │   │   ├── [000003_1.jpg | ...]  # Garment mask
-│   │   ├── train_label     
+│   │   ├── train_label
 │   │   │   ├── [000003_0.jpg | ...]  # Parsing map
-│   │   ├── train_densepose 
+│   │   ├── train_densepose
 │   │   │   ├── [000003_0.npy | ...]  # Densepose
-│   │   ├── train_pose      
+│   │   ├── train_pose
 │   │   │   ├── [000003_0.json | ...] # Openpose
 ```
 
@@ -67,8 +64,19 @@ Dataset folder structure:
 *Note: to run and save separate results for each pair [person, garment], set `batch_size=1`*.
 
 ### Training
-For each dataset, you need to train a Teacher network first to guide the Student network. DM-VTON uses [FS-VTON](https://arxiv.org/abs/2204.01046) as the Teacher. Each model is trained through 2 stages: first stage only trains warping module and stage 2 trains the entire model (warping module + generator). Check the sample scripts for training both Teacher network (`scripts/train_pb_warp` + `scripts/train_pb_e2e`) and Student network (`scripts/train_pf_warp` + `scripts/train_pf_e2e`). We also provide a Colab notebook [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1oLg0qe0nqLuIeaklzwbkk3IOKmMb0clk) as a quick tutorials.
+For each dataset, you need to train a Teacher network first to guide the Student network. DM-VTON uses [FS-VTON](https://arxiv.org/abs/2204.01046) as the Teacher. Each model is trained through 2 stages: first stage only trains warping module and stage 2 trains the entire model (warping module + generator). Check the sample scripts for training both Teacher network (`scripts/train_pb_warp` + `scripts/train_pb_e2e`) and Student network (`scripts/train_pf_warp` + `scripts/train_pf_e2e`). We also provide a Colab notebook [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1oLg0qe0nqLuIeaklzwbkk3IOKmMb0clk) as a quick tutorial.
 
+#### **Training Settings**
+A full list of trainning settings can be found in [`opt/train_opt.py`](./opt/train_opt.py). Below are some important settings.
+- `device`: Device (cpu/gpu) for performing training (e.g. 0,1,2 or cpu).
+- `batch_size`: Customize `batch_size` for each stage to optimize for your hardware.
+- `lr`: learning rate
+- Epochs = `niter` + `niter_decay`
+  - `niter`: Number of epochs using starting learning rate.
+  - `niter_decay`: Number of epochs to linearly decay learning rate to zero.
+- `save_period`: Frequency of saving checkpoints after `save_period`
+ epochs.
+- `resume`: Use if you want to continue training from a previous process.
 
 ## <div align="center">📈 Result</div>
 <div align="center">
