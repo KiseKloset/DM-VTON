@@ -159,6 +159,7 @@ class RMGNGenerator(BaseModel):
     def __init__(self, in_person_nc=3, in_clothes_nc=4, nf=64, multilevel=False, predmask=True):
         super().__init__()
         out_nc = 4
+        self.in_nc = [in_person_nc, in_clothes_nc]
 
         SR_scale = 1
         aei_encoder_head = False
@@ -169,8 +170,6 @@ class RMGNGenerator(BaseModel):
         self.generator = AADGenerator(
             nf=nf, out_nc=out_nc, SR_scale=SR_scale, multilevel=multilevel, predmask=predmask
         )
-
-        self.init_weights()
 
     def get_inp_attr(self, inp):
         inp_attr_list = self.inp_encoder(inp)
@@ -184,8 +183,9 @@ class RMGNGenerator(BaseModel):
         out = self.generator(inp_attr_list, ref_attr_list)
         return out
 
-    def forward(self, inp, ref):
+    def forward(self, x):
+        inp, ref = torch.split(x, split_size_or_sections=self.in_nc, dim=1)
         inp_attr_list = self.get_inp_attr(inp)
         ref_attr_list = self.get_ref_attr(ref)
         out, out_L1, out_L2, M_list = self.get_gen(inp_attr_list, ref_attr_list)
-        return out, out_L1, out_L2, M_list
+        return out  # , out_L1, out_L2, M_list
