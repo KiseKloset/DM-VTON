@@ -6,6 +6,7 @@ cupy-cuda11x==12.1.0
 # Monitor/Metric
 tensorboardX==2.6
 pytorch-fid==0.3.0
+thop==0.1.1.post2209072238
 tqdm==4.65.0
 
 # Other

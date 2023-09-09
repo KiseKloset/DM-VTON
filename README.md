@@ -85,7 +85,16 @@ For each dataset, you need to train a Teacher network first to guide the Student
 | FS-VTON (CVPR22) | 26.5 | 37.5 | 309.3 |
 | OURS | 28.2 | 23.3 | 37.8 |
 
-<!-- ## <div align="center">😎 Model Zoo </div> -->
+## <div align="center">😎 Supported Models </div>
+We also support some parser-free models that can be used as Teacher and/or Student. The methods all have a 2-stage architecture (warping module and generator). For more details, see [here](./models/).
+
+| Methods | Source | Teacher | Student |
+| :- | :- | :-:| :-: |
+| PF-AFN | [Parser-Free Virtual Try-on via Distilling Appearance Flows](https://arxiv.org/abs/2103.04559) | ✅ | ✅ |
+| FS-VTON | [Style-Based Global Appearance Flow for Virtual Try-On](https://arxiv.org/abs/2204.01046) | ✅ | ✅ |
+| RMGN | [RMGN: A Regional Mask Guided Network for Parser-free Virtual Try-on](https://arxiv.org/abs/2204.11258) | ❌ | ✅ |
+| DM-VTON (Ours) | [DM-VTON: Distilled Mobile Real-time Virtual Try-On](https://arxiv.org/abs/2308.13798) | ✅ | ✅ |
+
 
 ## <div align="center">🙏 Acknowledgments </div>
 This code is based on [PF-AFN](https://github.com/geyuying/PF-AFN).
