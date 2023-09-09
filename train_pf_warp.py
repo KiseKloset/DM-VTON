@@ -402,6 +402,8 @@ def train_pf_warp(opt):
         log_path,
         (f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.'),
     )
+    print_log(log_path, f'Results are saved at {opt.save_dir}')
+
     with torch.cuda.device(device):
         torch.cuda.empty_cache()
 
