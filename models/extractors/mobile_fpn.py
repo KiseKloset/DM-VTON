@@ -58,7 +58,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2_dynamicFPN(nn.Module):
-    def __init__(self, width_mult=1.0):
+    def __init__(self, input_nc, width_mult=1.0):
         super().__init__()
 
         self.input_channel = int(32 * width_mult)
@@ -66,7 +66,7 @@ class MobileNetV2_dynamicFPN(nn.Module):
 
         # First layer
         self.first_layer = nn.Sequential(
-            nn.Conv2d(3, self.input_channel, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(input_nc, self.input_channel, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(self.input_channel),
             nn.ReLU6(inplace=True),
         )

@@ -288,11 +288,10 @@ class AFlowNet(nn.Module):
 
 class MobileAFWM(BaseModel):
     def __init__(self, input_nc, align_corners):
-        # TODO: Add option input_nc (use as a Teacher)
         super().__init__()
         num_filters = [64, 128, 256, 256, 256]
-        self.image_mobile = MobileNetV2_dynamicFPN()
-        self.cond_mobile = MobileNetV2_dynamicFPN()
+        self.image_mobile = MobileNetV2_dynamicFPN(3)
+        self.cond_mobile = MobileNetV2_dynamicFPN(input_nc)
 
         self.aflow_net = AFlowNet(len(num_filters), align_corners=align_corners)
 
@@ -329,5 +328,7 @@ class MobileAFWM(BaseModel):
                 delta_y_all,
             )
         elif phase == 'test':
-            x_warp, last_flow = self.aflow_net(image_input, image_pyramids, cond_pyramids, phase=phase)
+            x_warp, last_flow = self.aflow_net(
+                image_input, image_pyramids, cond_pyramids, phase=phase
+            )
             return x_warp, last_flow
