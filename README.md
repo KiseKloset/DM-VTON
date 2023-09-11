@@ -16,7 +16,7 @@
 </div>
 
 
-## <div align="center">📝 Documentation </div>
+## <div align="center"> 📝 Documentation </div>
 ### Installation
 This source code has been developed and tested with `python==3.10`, as well as `pytorch=1.13.1` and `torchvision==0.14.1`. We provide a script to install the environment:
 ```sh
@@ -78,7 +78,7 @@ A full list of trainning settings can be found in [`opt/train_opt.py`](./opt/tra
  epochs.
 - `resume`: Use if you want to continue training from a previous process.
 
-## <div align="center">📈 Result</div>
+## <div align="center"> 📈 Result </div>
 <div align="center">
   <img src="https://raw.githubusercontent.com/KiseKloset/DM-VTON/assets/fps.png" class="left" width='60%'>
 </div>
@@ -93,7 +93,7 @@ A full list of trainning settings can be found in [`opt/train_opt.py`](./opt/tra
 | FS-VTON (CVPR22) | 26.5 | 37.5 | 309.3 |
 | OURS | 28.2 | 23.3 | 37.8 |
 
-## <div align="center">😎 Supported Models </div>
+## <div align="center"> 😎 Supported Models </div>
 We also support some parser-free models that can be used as Teacher and/or Student. The methods all have a 2-stage architecture (warping module and generator). For more details, see [here](./models/).
 
 | Methods | Source | Teacher | Student |
@@ -104,5 +104,17 @@ We also support some parser-free models that can be used as Teacher and/or Stude
 | DM-VTON (Ours) | [DM-VTON: Distilled Mobile Real-time Virtual Try-On](https://arxiv.org/abs/2308.13798) | ✅ | ✅ |
 
 
-## <div align="center">🙏 Acknowledgments </div>
+## <div align="center"> ℹ Citation </div>
+If our code or paper is helpful to your work, please consider citing:
+
+```bibtex
+@inproceedings{nguyen2023dm,
+  title        = {DM-VTON: Distilled Mobile Real-time Virtual Try-On},
+  author       = {Nguyen-Ngoc, Khoi-Nguyen and Phan-Nguyen, Thanh-Tung and Le, Khanh-Duy and Nguyen, Tam V and Tran, Minh-Triet and Le, Trung-Nghia},
+  year         = 2023,
+  booktitle    = {IEEE International Symposium on Mixed and Augmented Reality Adjunct (ISMAR-Adjunct)},
+}
+```
+
+## <div align="center"> 🙏 Acknowledgments </div>
 This code is based on [PF-AFN](https://github.com/geyuying/PF-AFN).
