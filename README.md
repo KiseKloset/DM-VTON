@@ -9,7 +9,7 @@
 
   <img src="https://raw.githubusercontent.com/KiseKloset/DM-VTON/assets/promotion.png" width="35%"><br>
 
-  This is official pytorch implementation of [DM-VTON: Distilled Mobile Real-time Virtual Try-On](https://arxiv.org/abs/2308.13798). DM-VTON is designed to be fast, lightweight, while maintaining the quality of the try-on image. It can achieve 40 frames per second on a single Nvidia Tesla T4 GPU and only take up 37 MB of memory.
+  This is the official pytorch implementation of [DM-VTON: Distilled Mobile Real-time Virtual Try-On](https://arxiv.org/abs/2308.13798). DM-VTON is designed to be fast, lightweight, while maintaining the quality of the try-on image. It can achieve 40 frames per second on a single Nvidia Tesla T4 GPU and only take up 37 MB of memory.
 
   <img src="https://raw.githubusercontent.com/KiseKloset/DM-VTON/assets/model_diagram.png" class="left" width='100%'>
 
@@ -18,8 +18,17 @@
 
 ## <div align="center"> 📝 Documentation </div>
 ### Installation
-This source code has been developed and tested with `python==3.10`, as well as `pytorch=1.13.1` and `torchvision==0.14.1`. We provide a script to install the environment:
+This source code has been developed and tested with `python==3.10`, as well as `pytorch=1.13.1` and `torchvision==0.14.1`. We recommend using the [conda](https://docs.conda.io/en/latest/) package manager for installation.
+
+1. Clone this repo.
 ```sh
+git clone https://github.com/KiseKloset/DM-VTON.git
+```
+
+2. Install dependencies with conda (we provide script [`scripts/install.sh`](./scripts/install.sh)).
+```sh
+conda create -n dm-vton python=3.10
+conda activate dm-vton
 bash scripts/install.sh
 ```
 
