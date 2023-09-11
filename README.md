@@ -118,3 +118,7 @@ If our code or paper is helpful to your work, please consider citing:
 
 ## <div align="center"> 🙏 Acknowledgments </div>
 This code is based on [PF-AFN](https://github.com/geyuying/PF-AFN).
+
+## <div align="center"> 📄 License </div>
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />
+This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. The use of this code is for academic purposes only.
