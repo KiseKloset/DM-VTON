@@ -77,7 +77,7 @@ For each dataset, you need to train a Teacher network first to guide the Student
 
 #### **Training Settings**
 A full list of trainning settings can be found in [`opt/train_opt.py`](./opt/train_opt.py). Below are some important settings.
-- `device`: Device (cpu/gpu) for performing training (e.g. 0,1,2 or cpu).
+- `device`: Device (gpu) for performing training (e.g. 0,1,2). *DM-VTON needs a GPU to run with `cupy`*.
 - `batch_size`: Customize `batch_size` for each stage to optimize for your hardware.
 - `lr`: learning rate
 - Epochs = `niter` + `niter_decay`
