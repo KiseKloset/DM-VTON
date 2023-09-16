@@ -23,9 +23,8 @@ from .post_processing import transform_preds
 #             prob = joint[keypoint_coord]
 #             keypoint_coords.append([coord_y, coord_x, prob])
 #         output.append(keypoint_coords)
-
+            
 #     return np.array(output).astype(float)
-
 
 def _calc_distances(preds, targets, mask, normalize):
     """Calculate the normalized distances between preds and target.
@@ -54,7 +53,8 @@ def _calc_distances(preds, targets, mask, normalize):
     distances = np.full((N, K), -1, dtype=np.float32)
     # handle invalid values
     normalize[np.where(normalize <= 0)] = 1e6
-    distances[_mask] = np.linalg.norm(((preds - targets) / normalize[:, None, :])[_mask], axis=-1)
+    distances[_mask] = np.linalg.norm(
+        ((preds - targets) / normalize[:, None, :])[_mask], axis=-1)
     return distances.T
 
 
@@ -97,7 +97,8 @@ def _get_max_preds(heatmaps):
         - preds (np.ndarray[N, K, 2]): Predicted keypoint location.
         - maxvals (np.ndarray[N, K, 1]): Scores (confidence) of the keypoints.
     """
-    assert isinstance(heatmaps, np.ndarray), 'heatmaps should be numpy.ndarray'
+    assert isinstance(heatmaps,
+                      np.ndarray), ('heatmaps should be numpy.ndarray')
     assert heatmaps.ndim == 4, 'batch_images should be 4-ndim'
 
     N, K, _, W = heatmaps.shape
@@ -132,7 +133,8 @@ def _get_max_preds_3d(heatmaps):
         - preds (np.ndarray[N, K, 3]): Predicted keypoint location.
         - maxvals (np.ndarray[N, K, 1]): Scores (confidence) of the keypoints.
     """
-    assert isinstance(heatmaps, np.ndarray), 'heatmaps should be numpy.ndarray'
+    assert isinstance(heatmaps, np.ndarray), \
+        ('heatmaps should be numpy.ndarray')
     assert heatmaps.ndim == 5, 'heatmaps should be 5-ndim'
 
     N, K, D, H, W = heatmaps.shape
@@ -306,8 +308,8 @@ def keypoint_epe(pred, gt, mask):
     """
 
     distances = _calc_distances(
-        pred, gt, mask, np.ones((pred.shape[0], pred.shape[2]), dtype=np.float32)
-    )
+        pred, gt, mask,
+        np.ones((pred.shape[0], pred.shape[2]), dtype=np.float32))
     distance_valid = distances[distances != -1]
     return distance_valid.sum() / max(1, len(distance_valid))
 
@@ -331,14 +333,14 @@ def _taylor(heatmap, coord):
     if 1 < px < W - 2 and 1 < py < H - 2:
         dx = 0.5 * (heatmap[py][px + 1] - heatmap[py][px - 1])
         dy = 0.5 * (heatmap[py + 1][px] - heatmap[py - 1][px])
-        dxx = 0.25 * (heatmap[py][px + 2] - 2 * heatmap[py][px] + heatmap[py][px - 2])
+        dxx = 0.25 * (
+            heatmap[py][px + 2] - 2 * heatmap[py][px] + heatmap[py][px - 2])
         dxy = 0.25 * (
-            heatmap[py + 1][px + 1]
-            - heatmap[py - 1][px + 1]
-            - heatmap[py + 1][px - 1]
-            + heatmap[py - 1][px - 1]
-        )
-        dyy = 0.25 * (heatmap[py + 2 * 1][px] - 2 * heatmap[py][px] + heatmap[py - 2 * 1][px])
+            heatmap[py + 1][px + 1] - heatmap[py - 1][px + 1] -
+            heatmap[py + 1][px - 1] + heatmap[py - 1][px - 1])
+        dyy = 0.25 * (
+            heatmap[py + 2 * 1][px] - 2 * heatmap[py][px] +
+            heatmap[py - 2 * 1][px])
         derivative = np.array([[dx], [dy]])
         hessian = np.array([[dxx, dxy], [dxy, dyy]])
         if dxx * dyy - dxy**2 != 0:
@@ -377,7 +379,7 @@ def post_dark_udp(coords, batch_heatmaps, kernel=3):
         batch_heatmaps = batch_heatmaps.cpu().numpy()
     B, K, H, W = batch_heatmaps.shape
     N = coords.shape[0]
-    assert B == 1 or B == N
+    assert (B == 1 or B == N)
     for heatmaps in batch_heatmaps:
         for heatmap in heatmaps:
             cv2.GaussianBlur(heatmap, (kernel, kernel), 0, heatmap)
@@ -385,8 +387,8 @@ def post_dark_udp(coords, batch_heatmaps, kernel=3):
     np.log(batch_heatmaps, batch_heatmaps)
 
     batch_heatmaps_pad = np.pad(
-        batch_heatmaps, ((0, 0), (0, 0), (1, 1), (1, 1)), mode='edge'
-    ).flatten()
+        batch_heatmaps, ((0, 0), (0, 0), (1, 1), (1, 1)),
+        mode='edge').flatten()
 
     index = coords[..., 0] + 1 + (coords[..., 1] + 1) * (W + 2)
     index += (W + 2) * (H + 2) * np.arange(0, B * K).reshape(-1, K)
@@ -446,7 +448,8 @@ def _gaussian_blur(heatmaps, kernel=11):
     for i in range(batch_size):
         for j in range(num_joints):
             origin_max = np.max(heatmaps[i, j])
-            dr = np.zeros((height + 2 * border, width + 2 * border), dtype=np.float32)
+            dr = np.zeros((height + 2 * border, width + 2 * border),
+                          dtype=np.float32)
             dr[border:-border, border:-border] = heatmaps[i, j].copy()
             dr = cv2.GaussianBlur(dr, (kernel, kernel), 0)
             heatmaps[i, j] = dr[border:-border, border:-border].copy()
@@ -487,17 +490,15 @@ def keypoints_from_regression(regression_preds, center, scale, img_size):
     return preds, maxvals
 
 
-def keypoints_from_heatmaps(
-    heatmaps,
-    center,
-    scale,
-    unbiased=False,
-    post_process='default',
-    kernel=11,
-    valid_radius_factor=0.0546875,
-    use_udp=False,
-    target_type='GaussianHeatmap',
-):
+def keypoints_from_heatmaps(heatmaps,
+                            center,
+                            scale,
+                            unbiased=False,
+                            post_process='default',
+                            kernel=11,
+                            valid_radius_factor=0.0546875,
+                            use_udp=False,
+                            target_type='GaussianHeatmap'):
     """Get final keypoint predictions from heatmaps and transform them back to
     the image.
 
@@ -554,31 +555,27 @@ def keypoints_from_heatmaps(
     # normalize configs
     if post_process is False:
         warnings.warn(
-            'post_process=False is deprecated, ' 'please use post_process=None instead',
-            DeprecationWarning,
-        )
+            'post_process=False is deprecated, '
+            'please use post_process=None instead', DeprecationWarning)
         post_process = None
     elif post_process is True:
         if unbiased is True:
             warnings.warn(
                 'post_process=True, unbiased=True is deprecated,'
                 " please use post_process='unbiased' instead",
-                DeprecationWarning,
-            )
+                DeprecationWarning)
             post_process = 'unbiased'
         else:
             warnings.warn(
                 'post_process=True, unbiased=False is deprecated, '
                 "please use post_process='default' instead",
-                DeprecationWarning,
-            )
+                DeprecationWarning)
             post_process = 'default'
     elif post_process == 'default':
         if unbiased is True:
             warnings.warn(
-                'unbiased=True is deprecated, please use ' "post_process='unbiased' instead",
-                DeprecationWarning,
-            )
+                'unbiased=True is deprecated, please use '
+                "post_process='unbiased' instead", DeprecationWarning)
             post_process = 'unbiased'
 
     # start processing
@@ -606,14 +603,14 @@ def keypoints_from_heatmaps(
             index = index.astype(int).reshape(N, K // 3, 1)
             preds += np.concatenate((offset_x[index], offset_y[index]), axis=2)
         else:
-            raise ValueError(
-                'target_type should be either ' "'GaussianHeatmap' or 'CombinedTarget'"
-            )
+            raise ValueError('target_type should be either '
+                             "'GaussianHeatmap' or 'CombinedTarget'")
     else:
         preds, maxvals = _get_max_preds(heatmaps)
         if post_process == 'unbiased':  # alleviate biased coordinate
             # apply Gaussian distribution modulation.
-            heatmaps = np.log(np.maximum(_gaussian_blur(heatmaps, kernel), 1e-10))
+            heatmaps = np.log(
+                np.maximum(_gaussian_blur(heatmaps, kernel), 1e-10))
             for n in range(N):
                 for k in range(K):
                     preds[n][k] = _taylor(heatmaps[n][k], preds[n][k])
@@ -625,19 +622,18 @@ def keypoints_from_heatmaps(
                     px = int(preds[n][k][0])
                     py = int(preds[n][k][1])
                     if 1 < px < W - 1 and 1 < py < H - 1:
-                        diff = np.array(
-                            [
-                                heatmap[py][px + 1] - heatmap[py][px - 1],
-                                heatmap[py + 1][px] - heatmap[py - 1][px],
-                            ]
-                        )
-                        preds[n][k] += np.sign(diff) * 0.25
+                        diff = np.array([
+                            heatmap[py][px + 1] - heatmap[py][px - 1],
+                            heatmap[py + 1][px] - heatmap[py - 1][px]
+                        ])
+                        preds[n][k] += np.sign(diff) * .25
                         if post_process == 'megvii':
                             preds[n][k] += 0.5
 
     # Transform back to the image
     for i in range(N):
-        preds[i] = transform_preds(preds[i], center[i], scale[i], [W, H], use_udp=use_udp)
+        preds[i] = transform_preds(
+            preds[i], center[i], scale[i], [W, H], use_udp=use_udp)
 
     if post_process == 'megvii':
         maxvals = maxvals / 255.0 + 0.5
@@ -673,7 +669,8 @@ def keypoints_from_heatmaps3d(heatmaps, center, scale):
     preds, maxvals = _get_max_preds_3d(heatmaps)
     # Transform back to the image
     for i in range(N):
-        preds[i, :, :2] = transform_preds(preds[i, :, :2], center[i], scale[i], [W, H])
+        preds[i, :, :2] = transform_preds(preds[i, :, :2], center[i], scale[i],
+                                          [W, H])
     return preds, maxvals
 
 

@@ -1,6 +1,6 @@
 import torch.nn as nn
-from ClothFlow.models.networks import FlowEstimator
 
+from ClothFlow.models.networks import FlowEstimator
 
 class ClothFlow(nn.Module):
     def __init__(self):

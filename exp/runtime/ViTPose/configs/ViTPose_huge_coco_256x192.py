@@ -4,30 +4,29 @@
 # ]
 evaluation = dict(interval=10, metric='mAP', save_best='AP')
 
-optimizer = dict(
-    type='AdamW',
-    lr=5e-4,
-    betas=(0.9, 0.999),
-    weight_decay=0.1,
-    constructor='LayerDecayOptimizerConstructor',
-    paramwise_cfg=dict(
-        num_layers=32,
-        layer_decay_rate=0.85,
-        custom_keys={
-            'bias': dict(decay_multi=0.0),
-            'pos_embed': dict(decay_mult=0.0),
-            'relative_position_bias_table': dict(decay_mult=0.0),
-            'norm': dict(decay_mult=0.0),
-        },
-    ),
-)
+optimizer = dict(type='AdamW', lr=5e-4, betas=(0.9, 0.999), weight_decay=0.1,
+                 constructor='LayerDecayOptimizerConstructor', 
+                 paramwise_cfg=dict(
+                                    num_layers=32, 
+                                    layer_decay_rate=0.85,
+                                    custom_keys={
+                                            'bias': dict(decay_multi=0.),
+                                            'pos_embed': dict(decay_mult=0.),
+                                            'relative_position_bias_table': dict(decay_mult=0.),
+                                            'norm': dict(decay_mult=0.)
+                                            }
+                                    )
+                )
 
-optimizer_config = dict(grad_clip=dict(max_norm=1.0, norm_type=2))
+optimizer_config = dict(grad_clip=dict(max_norm=1., norm_type=2))
 
 # learning policy
 lr_config = dict(
-    policy='step', warmup='linear', warmup_iters=500, warmup_ratio=0.001, step=[170, 200]
-)
+    policy='step',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=0.001,
+    step=[170, 200])
 total_epochs = 210
 target_type = 'GaussianHeatmap'
 channel_cfg = dict(
@@ -36,8 +35,9 @@ channel_cfg = dict(
     dataset_channel=[
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     ],
-    inference_channel=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-)
+    inference_channel=[
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
+    ])
 
 # model settings
 model = dict(
@@ -62,12 +62,9 @@ model = dict(
         num_deconv_layers=2,
         num_deconv_filters=(256, 256),
         num_deconv_kernels=(4, 4),
-        extra=dict(
-            final_conv_kernel=1,
-        ),
+        extra=dict(final_conv_kernel=1, ),
         out_channels=channel_cfg['num_output_channels'],
-        loss_keypoint=dict(type='JointsMSELoss', use_target_weight=True),
-    ),
+        loss_keypoint=dict(type='JointsMSELoss', use_target_weight=True)),
     train_cfg=dict(),
     test_cfg=dict(
         flip_test=True,
@@ -75,9 +72,7 @@ model = dict(
         shift_heatmap=False,
         target_type=target_type,
         modulate_kernel=11,
-        use_udp=True,
-    ),
-)
+        use_udp=True))
 
 data_cfg = dict(
     image_size=[192, 256],
@@ -92,44 +87,54 @@ data_cfg = dict(
     vis_thr=0.2,
     use_gt_bbox=False,
     det_bbox_thr=0.0,
-    bbox_file='data/coco/person_detection_results/' 'COCO_val2017_detections_AP_H_56_person.json',
+    bbox_file='data/coco/person_detection_results/'
+    'COCO_val2017_detections_AP_H_56_person.json',
 )
 
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='TopDownRandomFlip', flip_prob=0.5),
-    dict(type='TopDownHalfBodyTransform', num_joints_half_body=8, prob_half_body=0.3),
-    dict(type='TopDownGetRandomScaleRotation', rot_factor=40, scale_factor=0.5),
+    dict(
+        type='TopDownHalfBodyTransform',
+        num_joints_half_body=8,
+        prob_half_body=0.3),
+    dict(
+        type='TopDownGetRandomScaleRotation', rot_factor=40, scale_factor=0.5),
     dict(type='TopDownAffine', use_udp=True),
     dict(type='ToTensor'),
-    dict(type='NormalizeTensor', mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    dict(type='TopDownGenerateTarget', sigma=2, encoding='UDP', target_type=target_type),
+    dict(
+        type='NormalizeTensor',
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]),
+    dict(
+        type='TopDownGenerateTarget',
+        sigma=2,
+        encoding='UDP',
+        target_type=target_type),
     dict(
         type='Collect',
         keys=['img', 'target', 'target_weight'],
         meta_keys=[
-            'image_file',
-            'joints_3d',
-            'joints_3d_visible',
-            'center',
-            'scale',
-            'rotation',
-            'bbox_score',
-            'flip_pairs',
-        ],
-    ),
+            'image_file', 'joints_3d', 'joints_3d_visible', 'center', 'scale',
+            'rotation', 'bbox_score', 'flip_pairs'
+        ]),
 ]
 
 val_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='TopDownAffine', use_udp=True),
     dict(type='ToTensor'),
-    dict(type='NormalizeTensor', mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    dict(
+        type='NormalizeTensor',
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]),
     dict(
         type='Collect',
         keys=['img'],
-        meta_keys=['image_file', 'center', 'scale', 'rotation', 'bbox_score', 'flip_pairs'],
-    ),
+        meta_keys=[
+            'image_file', 'center', 'scale', 'rotation', 'bbox_score',
+            'flip_pairs'
+        ]),
 ]
 
 test_pipeline = val_pipeline
@@ -145,20 +150,18 @@ data = dict(
         ann_file=f'{data_root}/annotations/person_keypoints_train2017.json',
         img_prefix=f'{data_root}/train2017/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline,
-    ),
+        pipeline=train_pipeline),
     val=dict(
         type='TopDownCocoDataset',
         ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline,
-    ),
+        pipeline=val_pipeline),
     test=dict(
         type='TopDownCocoDataset',
         ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=test_pipeline,
-    ),
+        pipeline=test_pipeline)
 )
+

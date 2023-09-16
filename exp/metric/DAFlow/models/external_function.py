@@ -1,78 +1,79 @@
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision.models as models
+import torch.nn.functional as F
+import numpy as np
 
 
 class MultiAffineRegularizationLoss(nn.Module):
     def __init__(self, kz_dic):
-        super().__init__()
-        self.kz_dic = kz_dic
-        self.method_dic = {}
+        super(MultiAffineRegularizationLoss, self).__init__()
+        self.kz_dic=kz_dic
+        self.method_dic={}
         for key in kz_dic:
             instance = AffineRegularizationLoss(kz_dic[key])
             self.method_dic[key] = instance
-        self.layers = sorted(kz_dic, reverse=True)
-
+        self.layers = sorted(kz_dic, reverse=True) 
+ 
     def __call__(self, flow_fields):
-        loss = 0
+        loss=0
         for i in range(len(flow_fields)):
             method = self.method_dic[self.layers[i]]
             loss += method(flow_fields[i])
         return loss
 
 
+
 class AffineRegularizationLoss(nn.Module):
     """docstring for AffineRegularizationLoss"""
-
     # kernel_size: kz
     def __init__(self, kz):
-        super().__init__()
+        super(AffineRegularizationLoss, self).__init__()
         self.kz = kz
         self.criterion = torch.nn.L1Loss()
         self.extractor = BlockExtractor(kernel_size=kz)
         self.reshape = LocalAttnReshape()
 
         temp = np.arange(kz)
-        A = np.ones([kz * kz, 3])
+        A = np.ones([kz*kz, 3])
         A[:, 0] = temp.repeat(kz)
-        A[:, 1] = temp.repeat(kz).reshape((kz, kz)).transpose().reshape(kz**2)
+        A[:, 1] = temp.repeat(kz).reshape((kz,kz)).transpose().reshape(kz**2)
         AH = A.transpose()
-        k = np.dot(A, np.dot(np.linalg.inv(np.dot(AH, A)), AH)) - np.identity(
-            kz**2
-        )  # K = (A((AH A)^-1)AH - I)
+        k = np.dot(A, np.dot(np.linalg.inv(np.dot(AH, A)), AH)) - np.identity(kz**2) #K = (A((AH A)^-1)AH - I)
         self.kernel = np.dot(k.transpose(), k)
         self.kernel = torch.from_numpy(self.kernel).unsqueeze(1).view(kz**2, kz, kz).unsqueeze(1)
 
     def __call__(self, flow_fields):
         grid = self.flow2grid(flow_fields)
 
-        grid_x = grid[:, 0, :, :].unsqueeze(1)
-        grid_y = grid[:, 1, :, :].unsqueeze(1)
+        grid_x = grid[:,0,:,:].unsqueeze(1)
+        grid_y = grid[:,1,:,:].unsqueeze(1)
         weights = self.kernel.type_as(flow_fields)
         loss_x = self.calculate_loss(grid_x, weights)
         loss_y = self.calculate_loss(grid_y, weights)
-        return loss_x + loss_y
+        return loss_x+loss_y
+
 
     def calculate_loss(self, grid, weights):
-        results = nn.functional.conv2d(grid, weights)  # KH K B [b, kz*kz, w, h]
+        results = nn.functional.conv2d(grid, weights)   # KH K B [b, kz*kz, w, h]
         b, c, h, w = results.size()
         kernels_new = self.reshape(results, self.kz)
-        f = torch.zeros(b, 2, h, w).type_as(kernels_new) + float(int(self.kz / 2))
+        f = torch.zeros(b, 2, h, w).type_as(kernels_new) + float(int(self.kz/2))
         grid_H = self.extractor(grid, f)
-        result = torch.nn.functional.avg_pool2d(grid_H * kernels_new, self.kz, self.kz)
-        loss = torch.mean(result) * self.kz**2
+        result = torch.nn.functional.avg_pool2d(grid_H*kernels_new, self.kz, self.kz)
+        loss = torch.mean(result)*self.kz**2
         return loss
 
     def flow2grid(self, flow_field):
-        b, c, h, w = flow_field.size()
-        x = torch.arange(w).view(1, -1).expand(h, -1).type_as(flow_field).float()
+        b,c,h,w = flow_field.size()
+        x = torch.arange(w).view(1, -1).expand(h, -1).type_as(flow_field).float() 
         y = torch.arange(h).view(-1, 1).expand(-1, w).type_as(flow_field).float()
-        grid = torch.stack([x, y], dim=0)
+        grid = torch.stack([x,y], dim=0)
         grid = grid.unsqueeze(0).expand(b, -1, -1, -1)
-        return flow_field + grid
+        return flow_field+grid
 
+
+        
 
 class AdversarialLoss(nn.Module):
     r"""
@@ -84,7 +85,7 @@ class AdversarialLoss(nn.Module):
         r"""
         type = nsgan | lsgan | hinge
         """
-        super().__init__()
+        super(AdversarialLoss, self).__init__()
 
         self.type = type
         self.register_buffer('real_label', torch.tensor(target_real_label))
@@ -113,7 +114,6 @@ class AdversarialLoss(nn.Module):
             loss = self.criterion(outputs, labels)
             return loss
 
-
 class VGGLoss(nn.Module):
     r"""
     Perceptual loss, VGG-based
@@ -122,7 +122,7 @@ class VGGLoss(nn.Module):
     """
 
     def __init__(self, weights=[1.0, 1.0, 1.0, 1.0, 1.0]):
-        super().__init__()
+        super(VGGLoss, self).__init__()
         self.add_module('vgg', VGG19())
         self.criterion = torch.nn.L1Loss()
         self.weights = weights
@@ -133,7 +133,7 @@ class VGGLoss(nn.Module):
         f_T = f.transpose(1, 2)
         G = f.bmm(f_T) / (h * w * ch)
         return G
-
+        
     def __call__(self, x, y):
         # Compute features
         x_vgg, y_vgg = self.vgg(x), self.vgg(y)
@@ -147,21 +147,13 @@ class VGGLoss(nn.Module):
 
         # Compute loss
         style_loss = 0.0
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu2_2']), self.compute_gram(y_vgg['relu2_2'])
-        )
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu3_4']), self.compute_gram(y_vgg['relu3_4'])
-        )
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu4_4']), self.compute_gram(y_vgg['relu4_4'])
-        )
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu5_2']), self.compute_gram(y_vgg['relu5_2'])
-        )
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu2_2']), self.compute_gram(y_vgg['relu2_2']))
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu3_4']), self.compute_gram(y_vgg['relu3_4']))
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu4_4']), self.compute_gram(y_vgg['relu4_4']))
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu5_2']), self.compute_gram(y_vgg['relu5_2']))
+
 
         return content_loss, style_loss
-
 
 class StyleLoss(nn.Module):
     r"""
@@ -171,7 +163,7 @@ class StyleLoss(nn.Module):
     """
 
     def __init__(self):
-        super().__init__()
+        super(StyleLoss, self).__init__()
         self.add_module('vgg', VGG19())
         self.criterion = torch.nn.L1Loss()
 
@@ -189,20 +181,13 @@ class StyleLoss(nn.Module):
 
         # Compute loss
         style_loss = 0.0
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu2_2']), self.compute_gram(y_vgg['relu2_2'])
-        )
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu3_4']), self.compute_gram(y_vgg['relu3_4'])
-        )
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu4_4']), self.compute_gram(y_vgg['relu4_4'])
-        )
-        style_loss += self.criterion(
-            self.compute_gram(x_vgg['relu5_2']), self.compute_gram(y_vgg['relu5_2'])
-        )
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu2_2']), self.compute_gram(y_vgg['relu2_2']))
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu3_4']), self.compute_gram(y_vgg['relu3_4']))
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu4_4']), self.compute_gram(y_vgg['relu4_4']))
+        style_loss += self.criterion(self.compute_gram(x_vgg['relu5_2']), self.compute_gram(y_vgg['relu5_2']))
 
         return style_loss
+
 
 
 class PerceptualLoss(nn.Module):
@@ -213,7 +198,7 @@ class PerceptualLoss(nn.Module):
     """
 
     def __init__(self, weights=[1.0, 1.0, 1.0, 1.0, 1.0]):
-        super().__init__()
+        super(PerceptualLoss, self).__init__()
         self.add_module('vgg', VGG19())
         self.criterion = torch.nn.L1Loss()
         self.weights = weights
@@ -232,27 +217,27 @@ class PerceptualLoss(nn.Module):
 
 
 class PerceptualCorrectness(nn.Module):
-    r""" """
+    r"""
 
-    def __init__(self, layer=['rel1_1', 'relu2_1', 'relu3_1', 'relu4_1']):
-        super().__init__()
+    """
+
+    def __init__(self, layer=['rel1_1','relu2_1','relu3_1','relu4_1']):
+        super(PerceptualCorrectness, self).__init__()
         self.add_module('vgg', VGG19())
-        self.layer = layer
-        self.eps = 1e-8
+        self.layer = layer  
+        self.eps=1e-8 
         self.resample = Resample2d(4, 1, sigma=2)
 
-    def __call__(
-        self, target, source, flow_list, used_layers, mask=None, use_bilinear_sampling=False
-    ):
-        used_layers = sorted(used_layers, reverse=True)
+    def __call__(self, target, source, flow_list, used_layers, mask=None, use_bilinear_sampling=False):
+        used_layers=sorted(used_layers, reverse=True)
         # self.target=target
         # self.source=source
         self.target_vgg, self.source_vgg = self.vgg(target), self.vgg(source)
         loss = 0
         for i in range(len(flow_list)):
-            loss += self.calculate_loss(
-                flow_list[i], self.layer[used_layers[i]], mask, use_bilinear_sampling
-            )
+            loss += self.calculate_loss(flow_list[i], self.layer[used_layers[i]], mask, use_bilinear_sampling)
+
+
 
         return loss
 
@@ -262,20 +247,21 @@ class PerceptualCorrectness(nn.Module):
         [b, c, h, w] = target_vgg.shape
 
         # maps = F.interpolate(maps, [h,w]).view(b,-1)
-        flow = F.interpolate(flow, [h, w])
+        flow = F.interpolate(flow, [h,w])
 
-        target_all = target_vgg.view(b, c, -1)  # [b C N2]
-        source_all = source_vgg.view(b, c, -1).transpose(1, 2)  # [b N2 C]
+        target_all = target_vgg.view(b, c, -1)                      #[b C N2]
+        source_all = source_vgg.view(b, c, -1).transpose(1,2)       #[b N2 C]
 
-        source_norm = source_all / (source_all.norm(dim=2, keepdim=True) + self.eps)
-        target_norm = target_all / (target_all.norm(dim=1, keepdim=True) + self.eps)
+
+        source_norm = source_all/(source_all.norm(dim=2, keepdim=True)+self.eps)
+        target_norm = target_all/(target_all.norm(dim=1, keepdim=True)+self.eps)
         try:
-            correction = torch.bmm(source_norm, target_norm)  # [b N2 N2]
+            correction = torch.bmm(source_norm, target_norm)                       #[b N2 N2]
         except:
             print("An exception occurred")
             print(source_norm.shape)
             print(target_norm.shape)
-        (correction_max, max_indices) = torch.max(correction, dim=1)
+        (correction_max,max_indices) = torch.max(correction, dim=1)
 
         # interple with bilinear sampling
         if use_bilinear_sampling:
@@ -283,15 +269,15 @@ class PerceptualCorrectness(nn.Module):
         else:
             input_sample = self.resample(source_vgg, flow).view(b, c, -1)
 
-        correction_sample = F.cosine_similarity(input_sample, target_all)  # [b 1 N2]
-        loss_map = torch.exp(-correction_sample / (correction_max + self.eps))
+        correction_sample = F.cosine_similarity(input_sample, target_all)    #[b 1 N2]
+        loss_map = torch.exp(-correction_sample/(correction_max+self.eps))
         if mask is None:
             loss = torch.mean(loss_map) - torch.exp(torch.tensor(-1).type_as(loss_map))
         else:
-            mask = F.interpolate(mask, size=(target_vgg.size(2), target_vgg.size(3)))
-            mask = mask.view(-1, target_vgg.size(2) * target_vgg.size(3))
+            mask=F.interpolate(mask, size=(target_vgg.size(2), target_vgg.size(3)))
+            mask=mask.view(-1, target_vgg.size(2)*target_vgg.size(3))
             loss_map = loss_map - torch.exp(torch.tensor(-1).type_as(loss_map))
-            loss = torch.sum(mask * loss_map) / (torch.sum(mask) + self.eps)
+            loss = torch.sum(mask * loss_map)/(torch.sum(mask)+self.eps)
 
         # print(correction_sample[0,2076:2082])
         # print(correction_max[0,2076:2082])
@@ -318,20 +304,21 @@ class PerceptualCorrectness(nn.Module):
 
     def bilinear_warp(self, source, flow):
         [b, c, h, w] = source.shape
-        x = torch.arange(w).view(1, -1).expand(h, -1).type_as(source).float() / (w - 1)
-        y = torch.arange(h).view(-1, 1).expand(-1, w).type_as(source).float() / (h - 1)
-        grid = torch.stack([x, y], dim=0)
+        x = torch.arange(w).view(1, -1).expand(h, -1).type_as(source).float() / (w-1)
+        y = torch.arange(h).view(-1, 1).expand(-1, w).type_as(source).float() / (h-1)
+        grid = torch.stack([x,y], dim=0)
         grid = grid.unsqueeze(0).expand(b, -1, -1, -1)
-        grid = 2 * grid - 1
-        flow = 2 * flow / torch.tensor([w, h]).view(1, 2, 1, 1).expand(b, -1, h, w).type_as(flow)
-        grid = (grid + flow).permute(0, 2, 3, 1)
+        grid = 2*grid - 1
+        flow = 2*flow/torch.tensor([w, h]).view(1, 2, 1, 1).expand(b, -1, h, w).type_as(flow)
+        grid = (grid+flow).permute(0, 2, 3, 1)
         input_sample = F.grid_sample(source, grid, align_corners=True).view(b, c, -1)
         return input_sample
 
 
+
 class VGG19(torch.nn.Module):
     def __init__(self):
-        super().__init__()
+        super(VGG19, self).__init__()
         features = models.vgg19(pretrained=True).features
         self.relu1_1 = torch.nn.Sequential()
         self.relu1_2 = torch.nn.Sequential()
@@ -431,16 +418,20 @@ class VGG19(torch.nn.Module):
         out = {
             'relu1_1': relu1_1,
             'relu1_2': relu1_2,
+
             'relu2_1': relu2_1,
             'relu2_2': relu2_2,
+
             'relu3_1': relu3_1,
             'relu3_2': relu3_2,
             'relu3_3': relu3_3,
             'relu3_4': relu3_4,
+
             'relu4_1': relu4_1,
             'relu4_2': relu4_2,
             'relu4_3': relu4_3,
             'relu4_4': relu4_4,
+
             'relu5_1': relu5_1,
             'relu5_2': relu5_2,
             'relu5_3': relu5_3,

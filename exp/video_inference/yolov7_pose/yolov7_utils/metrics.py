@@ -15,10 +15,8 @@ def fitness(x):
     return (x[:, :4] * w).sum(1)
 
 
-def ap_per_class(
-    tp, conf, pred_cls, target_cls, v5_metric=False, plot=False, save_dir='.', names=()
-):
-    """Compute the average precision, given the recall and precision curves.
+def ap_per_class(tp, conf, pred_cls, target_cls, v5_metric=False, plot=False, save_dir='.', names=()):
+    """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
         tp:  True positives (nparray, nx1 or nx10).
@@ -56,9 +54,7 @@ def ap_per_class(
 
             # Recall
             recall = tpc / (n_l + 1e-16)  # recall curve
-            r[ci] = np.interp(
-                -px, -conf[i], recall[:, 0], left=0
-            )  # negative x, xp because xp decreases
+            r[ci] = np.interp(-px, -conf[i], recall[:, 0], left=0)  # negative x, xp because xp decreases
 
             # Precision
             precision = tpc / (tpc + fpc)  # precision curve
@@ -66,9 +62,7 @@ def ap_per_class(
 
             # AP from recall-precision curve
             for j in range(tp.shape[1]):
-                ap[ci, j], mpre, mrec = compute_ap(
-                    recall[:, j], precision[:, j], v5_metric=v5_metric
-                )
+                ap[ci, j], mpre, mrec = compute_ap(recall[:, j], precision[:, j], v5_metric=v5_metric)
                 if plot and j == 0:
                     py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
 
@@ -85,7 +79,7 @@ def ap_per_class(
 
 
 def compute_ap(recall, precision, v5_metric=False):
-    """Compute the average precision, given the recall and precision curves
+    """ Compute the average precision, given the recall and precision curves
     # Arguments
         recall:    The recall curve (list)
         precision: The precision curve (list)
@@ -96,10 +90,10 @@ def compute_ap(recall, precision, v5_metric=False):
 
     # Append sentinel values to beginning and end
     if v5_metric:  # New YOLOv5 metric, same as MMDetection and Detectron2 repositories
-        mrec = np.concatenate(([0.0], recall, [1.0]))
+        mrec = np.concatenate(([0.], recall, [1.0]))
     else:  # Old YOLOv5 metric, i.e. default YOLOv7 metric
-        mrec = np.concatenate(([0.0], recall, [recall[-1] + 0.01]))
-    mpre = np.concatenate(([1.0], precision, [0.0]))
+        mrec = np.concatenate(([0.], recall, [recall[-1] + 0.01]))
+    mpre = np.concatenate(([1.], precision, [0.]))
 
     # Compute the precision envelope
     mpre = np.flip(np.maximum.accumulate(np.flip(mpre)))
@@ -171,22 +165,15 @@ class ConfusionMatrix:
         try:
             import seaborn as sn
 
-            array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1e-6)  # normalize
+            array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
             fig = plt.figure(figsize=(12, 9), tight_layout=True)
             sn.set(font_scale=1.0 if self.nc < 50 else 0.8)  # for label size
             labels = (0 < len(names) < 99) and len(names) == self.nc  # apply names to ticklabels
-            sn.heatmap(
-                array,
-                annot=self.nc < 30,
-                annot_kws={"size": 8},
-                cmap='Blues',
-                fmt='.2f',
-                square=True,
-                xticklabels=names + ['background FP'] if labels else "auto",
-                yticklabels=names + ['background FN'] if labels else "auto",
-            ).set_facecolor((1, 1, 1))
+            sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
+                       xticklabels=names + ['background FP'] if labels else "auto",
+                       yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel('True')
             fig.axes[0].set_ylabel('Predicted')
             fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
@@ -200,7 +187,6 @@ class ConfusionMatrix:
 
 # Plots ----------------------------------------------------------------------------------------------------------------
 
-
 def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
     # Precision-recall curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
@@ -208,19 +194,11 @@ def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
         for i, y in enumerate(py.T):
-            ax.plot(
-                px, y, linewidth=1, label=f'{names[i]} {ap[i, 0]:.3f}'
-            )  # plot(recall, precision)
+            ax.plot(px, y, linewidth=1, label=f'{names[i]} {ap[i, 0]:.3f}')  # plot(recall, precision)
     else:
         ax.plot(px, py, linewidth=1, color='grey')  # plot(recall, precision)
 
-    ax.plot(
-        px,
-        py.mean(1),
-        linewidth=3,
-        color='blue',
-        label='all classes %.3f mAP@0.5' % ap[:, 0].mean(),
-    )
+    ax.plot(px, py.mean(1), linewidth=3, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
     ax.set_xlabel('Recall')
     ax.set_ylabel('Precision')
     ax.set_xlim(0, 1)
@@ -240,9 +218,7 @@ def plot_mc_curve(px, py, save_dir='mc_curve.png', names=(), xlabel='Confidence'
         ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
 
     y = py.mean(0)
-    ax.plot(
-        px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}'
-    )
+    ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xlim(0, 1)

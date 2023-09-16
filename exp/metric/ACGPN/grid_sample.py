@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import torch.nn.functional as F
 from torch.autograd import Variable
 

@@ -1,14 +1,13 @@
-import random
-
-import numpy as np
 import torch.utils.data as data
-import torchvision.transforms as transforms
 from PIL import Image
+import torchvision.transforms as transforms
+import numpy as np
+import random
 
 
 class BaseDataset(data.Dataset):
     def __init__(self):
-        super().__init__()
+        super(BaseDataset, self).__init__()
 
     def name(self):
         return 'BaseDataset'
@@ -30,7 +29,7 @@ def get_params(opt, size):
     x = random.randint(0, np.maximum(0, new_w - opt.fineSize))
     y = random.randint(0, np.maximum(0, new_h - opt.fineSize))
 
-    # flip = random.random() > 0.5
+    #flip = random.random() > 0.5
     flip = 0
     return {'crop_pos': (x, y), 'flip': flip}
 
@@ -41,29 +40,30 @@ def get_transform(opt, params, method=Image.BICUBIC, normalize=True):
         osize = [opt.loadSize, opt.loadSize]
         transform_list.append(transforms.Scale(osize, method))
     elif 'scale_width' in opt.resize_or_crop:
-        transform_list.append(
-            transforms.Lambda(lambda img: __scale_width(img, opt.loadSize, method))
-        )
+        transform_list.append(transforms.Lambda(
+            lambda img: __scale_width(img, opt.loadSize, method)))
         osize = [256, 192]
         transform_list.append(transforms.Scale(osize, method))
     if 'crop' in opt.resize_or_crop:
-        transform_list.append(
-            transforms.Lambda(lambda img: __crop(img, params['crop_pos'], opt.fineSize))
-        )
+        transform_list.append(transforms.Lambda(
+            lambda img: __crop(img, params['crop_pos'], opt.fineSize)))
 
     if opt.resize_or_crop == 'none':
-        base = float(2**opt.n_downsample_global)
+        base = float(2 ** opt.n_downsample_global)
         if opt.netG == 'local':
-            base *= 2**opt.n_local_enhancers
-        transform_list.append(transforms.Lambda(lambda img: __make_power_2(img, base, method)))
+            base *= (2 ** opt.n_local_enhancers)
+        transform_list.append(transforms.Lambda(
+            lambda img: __make_power_2(img, base, method)))
 
     if opt.isTrain and not opt.no_flip:
-        transform_list.append(transforms.Lambda(lambda img: __flip(img, params['flip'])))
+        transform_list.append(transforms.Lambda(
+            lambda img: __flip(img, params['flip'])))
 
     transform_list += [transforms.ToTensor()]
 
     if normalize:
-        transform_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        transform_list += [transforms.Normalize((0.5, 0.5, 0.5),
+                                                (0.5, 0.5, 0.5))]
     return transforms.Compose(transform_list)
 
 
@@ -82,7 +82,7 @@ def __make_power_2(img, base, method=Image.BICUBIC):
 
 def __scale_width(img, target_width, method=Image.BICUBIC):
     ow, oh = img.size
-    if ow == target_width:
+    if (ow == target_width):
         return img
     w = target_width
     h = int(target_width * oh / ow)
@@ -93,7 +93,7 @@ def __crop(img, pos, size):
     ow, oh = img.size
     x1, y1 = pos
     tw = th = size
-    if ow > tw or oh > th:
+    if (ow > tw or oh > th):
         return img.crop((x1, y1, x1 + tw, y1 + th))
     return img
 

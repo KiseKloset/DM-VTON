@@ -1,9 +1,9 @@
 import random
-
-import CVTON.models.models as models
-import numpy as np
 import torch
 import torch.nn as nn
+import numpy as np
+
+import CVTON.models.models as models
 from CVTON.config import get_test_arguments
 
 
@@ -23,10 +23,12 @@ class CVTON(nn.Module):
         self.model.eval()
         self.device = device
 
+
     def forward(self, data_i):
         image, label = models.preprocess_input(self.opt, data_i, self.device)
         pred = self.model(image, label)
         return pred
+    
 
 
 '''
@@ -59,7 +61,7 @@ class CVTON(nn.Module):
 6. Discussion
 (abstract)
 - Limitation
-- Downstream applications
+- Downstream applications 
 
 7. Conclusion
 - Summarization:

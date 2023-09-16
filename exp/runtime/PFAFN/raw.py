@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from PFAFN.models.afwm import AFWM
 from PFAFN.models.networks import ResUnetGenerator
 from PFAFN.options.test_options import TestOptions
-
 
 def load_checkpoint(model, checkpoint_path):
     if not os.path.exists(checkpoint_path):
@@ -31,22 +31,14 @@ class PFAFN(nn.Module):
             if checkpoint.get('gen') != None:
                 load_checkpoint(self.gen_model, checkpoint['gen'])
 
+
     def forward(self, person, cloth, cloth_edge):
         cloth_edge = (cloth_edge > 0.5).float()
         cloth = cloth * cloth_edge
-
+        
         # Warp
-        (
-            warped_cloth,
-            last_flow,
-        ) = self.warp_model(person, cloth)
-        warped_edge = F.grid_sample(
-            cloth_edge,
-            last_flow.permute(0, 2, 3, 1),
-            mode='bilinear',
-            padding_mode='zeros',
-            align_corners=True,
-        )
+        warped_cloth, last_flow, = self.warp_model(person, cloth)
+        warped_edge = F.grid_sample(cloth_edge, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='zeros', align_corners=True)
 
         # Gen
         gen_inputs = torch.cat([person, warped_cloth, warped_edge], 1)

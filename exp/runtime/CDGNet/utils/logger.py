@@ -1,6 +1,6 @@
-import logging
 import os
 import sys
+import logging
 
 # from . import pyt_utils
 # from utils.pyt_utils import ensure_dir
@@ -30,42 +30,39 @@ class LogFormatter(logging.Formatter):
 
         if self.log_fout:
             self.__set_fmt(self.date_full + mtxt + self.msg)
-            formatted = super().format(record)
+            formatted = super(LogFormatter, self).format(record)
             # self.log_fout.write(formatted)
             # self.log_fout.write('\n')
             # self.log_fout.flush()
             return formatted
 
         self.__set_fmt(self._color_date(self.date) + mcl(mtxt + self.msg))
-        formatted = super().format(record)
+        formatted = super(LogFormatter, self).format(record)
 
         return formatted
 
     if sys.version_info.major < 3:
-
         def __set_fmt(self, fmt):
             self._fmt = fmt
-
     else:
-
         def __set_fmt(self, fmt):
             self._style._fmt = fmt
 
     @staticmethod
     def _color_dbg(msg):
-        return f'\x1b[36m{msg}\x1b[0m'
+        return '\x1b[36m{}\x1b[0m'.format(msg)
 
     @staticmethod
     def _color_warn(msg):
-        return f'\x1b[1;31m{msg}\x1b[0m'
+        return '\x1b[1;31m{}\x1b[0m'.format(msg)
 
     @staticmethod
     def _color_err(msg):
-        return f'\x1b[1;4;31m{msg}\x1b[0m'
+        return '\x1b[1;4;31m{}\x1b[0m'.format(msg)
 
     @staticmethod
     def _color_omitted(msg):
-        return f'\x1b[35m{msg}\x1b[0m'
+        return '\x1b[35m{}\x1b[0m'.format(msg)
 
     @staticmethod
     def _color_normal(msg):
@@ -73,7 +70,7 @@ class LogFormatter(logging.Formatter):
 
     @staticmethod
     def _color_date(msg):
-        return f'\x1b[32m{msg}\x1b[0m'
+        return '\x1b[32m{}\x1b[0m'.format(msg)
 
 
 def get_logger(log_dir=None, log_file=None, formatter=LogFormatter):

@@ -1,12 +1,11 @@
 import os
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from SRMGNLastHope.models.afwm_test import AFWM
 from SRMGNLastHope.models.mobile_unet_generator import MobileNetV2_unet
 from SRMGNLastHope.options.test_options import TestOptions
-
 
 def load_checkpoint(model, checkpoint_path):
     if not os.path.exists(checkpoint_path):
@@ -33,7 +32,7 @@ class SRMGNLastHope(nn.Module):
 
         checkpoint = {
             "warp": "/root/nnknguyen/baseline/SRMGN-VITON/runs/train/SRMGN_align_mobile_viton/SRMGN_PF_e2e_align_mobile_100/weights/PFAFN_warp_epoch_093.pth",
-            "gen": "/root/nnknguyen/baseline/SRMGN-VITON/runs/train/SRMGN_align_mobile_viton/SRMGN_PF_e2e_align_mobile_100/weights/PFAFN_gen_epoch_093.pth",
+            "gen": "/root/nnknguyen/baseline/SRMGN-VITON/runs/train/SRMGN_align_mobile_viton/SRMGN_PF_e2e_align_mobile_100/weights/PFAFN_gen_epoch_093.pth"
         }
 
         if checkpoint != None:
@@ -42,22 +41,14 @@ class SRMGNLastHope(nn.Module):
             if checkpoint.get('gen') != None:
                 load_checkpoint(self.gen_model, checkpoint['gen'])
 
+
     def forward(self, person, cloth, cloth_edge):
         cloth_edge = (cloth_edge > 0.5).float()
         cloth = cloth * cloth_edge
-
+        
         # Warp
-        (
-            warped_cloth,
-            last_flow,
-        ) = self.warp_model(person, cloth)
-        warped_edge = F.grid_sample(
-            cloth_edge,
-            last_flow.permute(0, 2, 3, 1),
-            mode='bilinear',
-            padding_mode='zeros',
-            align_corners=True,
-        )
+        warped_cloth, last_flow, = self.warp_model(person, cloth)
+        warped_edge = F.grid_sample(cloth_edge, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='zeros', align_corners=True)
 
         # Gen
         gen_inputs = torch.cat([person, warped_cloth, warped_edge], 1)

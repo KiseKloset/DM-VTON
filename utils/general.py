@@ -1,14 +1,14 @@
 import contextlib
 import time
-from pathlib import Path
 
 import torch
 import yaml
+from pathlib import Path
 
 
 class Profile(contextlib.ContextDecorator):
     """
-    YOLOv5 Profile class.
+    YOLOv5 Profile class. 
     Usage: 'with Profile():' or '@Profile()' decorator
     """
 
@@ -29,14 +29,14 @@ class Profile(contextlib.ContextDecorator):
         if self.cuda:
             torch.cuda.synchronize(self.device)
         return time.time()
-
+    
 
 class AverageMeter:
     """
     Computes and stores the average and current value
     Source: https://github.dev/PaddlePaddle/PaddleOCR/ppocr/utils/utility.py
     """
-
+    
     def __init__(self):
         self.reset()
 
@@ -58,9 +58,7 @@ class AverageMeter:
 def yaml_save(file='data.yaml', data={}):
     # Single-line safe yaml saving
     with open(file, 'w') as f:
-        yaml.safe_dump(
-            {k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False
-        )
+        yaml.safe_dump({k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False)
 
 
 def increment_path(path: str, exist_ok: bool = False, sep: str = '') -> Path:
@@ -96,8 +94,10 @@ def warm_up(model, **dummy_input):
 
 def print_log(log_path, content, to_print=True):
     with open(log_path, 'a') as f:
-        f.write(content)
-        f.write('\n')
+      f.write(content)
+      f.write('\n')
 
     if to_print:
         print(content)
+
+    

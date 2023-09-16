@@ -10,16 +10,16 @@ def construct_basegrid(img_size):
         max_size = img_size
     else:
         max_size = max(img_size)
-
+    
     grid = torch.arange(max_size) / ((float(max_size) - 1) / 2) - 1
     grid_x = grid.repeat((max_size, 1)).unsqueeze(0)
     grid_y = grid_x.transpose(2, 1)
     basegrid = torch.cat([grid_x, grid_y], 0).unsqueeze(0)
-
+    
     if not isinstance(img_size, int):
         assert len(img_size) == 2, "img_size must be tuple of length 2."
         basegrid = F.interpolate(basegrid, size=img_size, mode="bilinear", align_corners=False)
-
+  
     return basegrid
 
 
@@ -66,7 +66,7 @@ def init_weights(net, init_type='normal'):
         net.apply(weights_init_kaiming)
     else:
         raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
-
+    
 
 def save_checkpoint(model, save_path):
     if not os.path.exists(os.path.dirname(save_path)):

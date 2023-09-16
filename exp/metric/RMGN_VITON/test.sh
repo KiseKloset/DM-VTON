@@ -5,7 +5,7 @@ python test.py \
 --hr --predmask \
 --dataroot ../dataset/Flow-Style-VTON/VITON_test \
 --warp_checkpoint checkpoints/RMGN_warp_epoch_030.pth \
---gen_checkpoint checkpoints/RMGN_gen_epoch_030.pth
+--gen_checkpoint checkpoints/RMGN_gen_epoch_030.pth 
 
 # pid
-# python -m pytorch_fid ../dataset/Flow-Style-VTON/VITON_test/test_img results/test_rmgn/tryon
+# python -m pytorch_fid ../dataset/Flow-Style-VTON/VITON_test/test_img results/test_rmgn/tryon 

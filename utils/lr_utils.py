@@ -1,7 +1,6 @@
 class AttributeDict(dict):
     def __getattr__(self, attr):
         return self[attr]
-
     def __setattr__(self, attr, value):
         self[attr] = value
 
@@ -34,7 +33,7 @@ class MyLRScheduler:
         current_epoch = self.last_epoch + 1
         self.__calculate_new_lr(current_epoch)
         self.last_epoch = current_epoch
-        self.__update_lr(self.optimizer)
+        self.__update_lr(self.optimizer) 
 
     def __calculate_new_lr(self, current_epoch):
         if current_epoch <= self.niter:
@@ -43,13 +42,20 @@ class MyLRScheduler:
         for lr, lrd, group in zip(self.lr, self.lrd, self.optimizer.param_groups):
             group['lr'] = lr - lrd
             if self.verbose:
-                print('Update learning rate: {:f} -> {:f}'.format(lr, group['lr']))
+                print('Update learning rate: %f -> %f' % (lr, group['lr']))
 
 
 if __name__ == "__main__":
-    opt = AttributeDict({'verbose': True, 'niter': 2, 'niter_decay': 2})
-    optimizer = AttributeDict({'param_groups': [{'lr': 5e-3}]})
+    opt = AttributeDict({
+        'verbose': True,
+        'niter': 2,
+        'niter_decay': 2
+    })
+    optimizer = AttributeDict({
+        'param_groups': [{ 'lr': 5e-3 }]
+    })
     epoch_resume = 0
     lr = MyLRScheduler(optimizer, epoch_resume, opt.niter, opt.niter_decay, opt.verbose)
     for i in range(epoch_resume + 1, opt.niter + opt.niter_decay + 1):
         lr.step()
+

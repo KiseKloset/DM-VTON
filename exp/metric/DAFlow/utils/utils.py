@@ -1,15 +1,12 @@
 import os
-
-import cv2
-import numpy as np
-import torch
-from PIL import Image
-from torch.nn.parallel._functions import Scatter
 from torch.nn.parallel.data_parallel import DataParallel
 from torch.nn.parallel.parallel_apply import parallel_apply
+from torch.nn.parallel._functions import Scatter
 from torch.optim.optimizer import Optimizer
-
-
+import cv2
+import numpy as np
+from PIL import Image
+import torch
 def scatter(inputs, target_gpus, chunk_sizes, dim=0):
     r"""
     Slices tensors into approximately equal chunks and
@@ -59,6 +56,7 @@ def scatter_kwargs(inputs, kwargs, target_gpus, chunk_sizes, dim=0):
 
 
 class BalancedDataParallel(DataParallel):
+
     def __init__(self, gpu0_bsz, *args, **kwargs):
         self.gpu0_bsz = gpu0_bsz
         super().__init__(*args, **kwargs)
@@ -99,7 +97,8 @@ class BalancedDataParallel(DataParallel):
         return scatter_kwargs(inputs, kwargs, device_ids, chunk_sizes, dim=self.dim)
 
 
-class AverageMeter:
+
+class AverageMeter(object):
     """Computes and stores the average and current value.
 
     Examples::
@@ -124,7 +123,6 @@ class AverageMeter:
         self.count += n
         self.avg = self.sum / self.count
 
-
 def gen_noise(shape):
     noise = np.zeros(shape, dtype=np.uint8)
     ### noise
@@ -136,8 +134,8 @@ def gen_noise(shape):
 
 def save_images(img_tensors, img_names, save_dir):
     for img_tensor, img_name in zip(img_tensors, img_names):
-        tensor = (img_tensor.clone() + 1) * 0.5 * 255
-        tensor = tensor.cpu().clamp(0, 255)
+        tensor = (img_tensor.clone()+1)*0.5 * 255
+        tensor = tensor.cpu().clamp(0,255)
 
         try:
             array = tensor.numpy().astype('uint8')
@@ -155,5 +153,6 @@ def save_images(img_tensors, img_names, save_dir):
 
 def load_checkpoint(model, checkpoint_path):
     if not os.path.exists(checkpoint_path):
-        raise ValueError(f"'{checkpoint_path}' is not a valid checkpoint path")
+        raise ValueError("'{}' is not a valid checkpoint path".format(checkpoint_path))
     model.load_state_dict(torch.load(checkpoint_path))
+

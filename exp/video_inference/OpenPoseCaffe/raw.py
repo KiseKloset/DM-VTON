@@ -1,7 +1,6 @@
-import cv2
 from predict_pose import PosePredictor
-
 from visualize import visualize_pose
+import cv2
 
 if __name__ == "__main__":
     p = PosePredictor(device_id=2)
