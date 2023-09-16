@@ -1,12 +1,10 @@
 from collections import namedtuple
-
 import torch
 from torchvision import models as tv
 
-
 class squeezenet(torch.nn.Module):
     def __init__(self, requires_grad=False, pretrained=True):
-        super().__init__()
+        super(squeezenet, self).__init__()
         pretrained_features = tv.squeezenet1_1(pretrained=pretrained).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
@@ -18,7 +16,7 @@ class squeezenet(torch.nn.Module):
         self.N_slices = 7
         for x in range(2):
             self.slice1.add_module(str(x), pretrained_features[x])
-        for x in range(2, 5):
+        for x in range(2,5):
             self.slice2.add_module(str(x), pretrained_features[x])
         for x in range(5, 8):
             self.slice3.add_module(str(x), pretrained_features[x])
@@ -49,17 +47,15 @@ class squeezenet(torch.nn.Module):
         h_relu6 = h
         h = self.slice7(h)
         h_relu7 = h
-        vgg_outputs = namedtuple(
-            "SqueezeOutputs", ['relu1', 'relu2', 'relu3', 'relu4', 'relu5', 'relu6', 'relu7']
-        )
-        out = vgg_outputs(h_relu1, h_relu2, h_relu3, h_relu4, h_relu5, h_relu6, h_relu7)
+        vgg_outputs = namedtuple("SqueezeOutputs", ['relu1','relu2','relu3','relu4','relu5','relu6','relu7'])
+        out = vgg_outputs(h_relu1,h_relu2,h_relu3,h_relu4,h_relu5,h_relu6,h_relu7)
 
         return out
 
 
 class alexnet(torch.nn.Module):
     def __init__(self, requires_grad=False, pretrained=True):
-        super().__init__()
+        super(alexnet, self).__init__()
         alexnet_pretrained_features = tv.alexnet(pretrained=pretrained).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
@@ -92,17 +88,14 @@ class alexnet(torch.nn.Module):
         h_relu4 = h
         h = self.slice5(h)
         h_relu5 = h
-        alexnet_outputs = namedtuple(
-            "AlexnetOutputs", ['relu1', 'relu2', 'relu3', 'relu4', 'relu5']
-        )
+        alexnet_outputs = namedtuple("AlexnetOutputs", ['relu1', 'relu2', 'relu3', 'relu4', 'relu5'])
         out = alexnet_outputs(h_relu1, h_relu2, h_relu3, h_relu4, h_relu5)
 
         return out
 
-
 class vgg16(torch.nn.Module):
     def __init__(self, requires_grad=False, pretrained=True):
-        super().__init__()
+        super(vgg16, self).__init__()
         vgg_pretrained_features = tv.vgg16(weights=tv.VGG16_Weights.IMAGENET1K_V1).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
@@ -135,26 +128,25 @@ class vgg16(torch.nn.Module):
         h_relu4_3 = h
         h = self.slice5(h)
         h_relu5_3 = h
-        vgg_outputs = namedtuple(
-            "VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3', 'relu5_3']
-        )
+        vgg_outputs = namedtuple("VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3', 'relu5_3'])
         out = vgg_outputs(h_relu1_2, h_relu2_2, h_relu3_3, h_relu4_3, h_relu5_3)
 
         return out
 
 
+
 class resnet(torch.nn.Module):
     def __init__(self, requires_grad=False, pretrained=True, num=18):
-        super().__init__()
-        if num == 18:
+        super(resnet, self).__init__()
+        if(num==18):
             self.net = tv.resnet18(pretrained=pretrained)
-        elif num == 34:
+        elif(num==34):
             self.net = tv.resnet34(pretrained=pretrained)
-        elif num == 50:
+        elif(num==50):
             self.net = tv.resnet50(pretrained=pretrained)
-        elif num == 101:
+        elif(num==101):
             self.net = tv.resnet101(pretrained=pretrained)
-        elif num == 152:
+        elif(num==152):
             self.net = tv.resnet152(pretrained=pretrained)
         self.N_slices = 5
 
@@ -182,7 +174,7 @@ class resnet(torch.nn.Module):
         h = self.layer4(h)
         h_conv5 = h
 
-        outputs = namedtuple("Outputs", ['relu1', 'conv2', 'conv3', 'conv4', 'conv5'])
+        outputs = namedtuple("Outputs", ['relu1','conv2','conv3','conv4','conv5'])
         out = outputs(h_relu1, h_conv2, h_conv3, h_conv4, h_conv5)
 
         return out

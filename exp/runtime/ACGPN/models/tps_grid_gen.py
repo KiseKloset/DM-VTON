@@ -1,6 +1,7 @@
-import itertools
+# encoding: utf-8
 
 import torch
+import itertools
 import torch.nn as nn
 from torch.autograd import Function, Variable
 
@@ -14,7 +15,8 @@ def compute_partial_repr(input_points, control_points):
     # original implementation, very slow
     # pairwise_dist = torch.sum(pairwise_diff ** 2, dim = 2) # square of distance
     pairwise_diff_square = pairwise_diff * pairwise_diff
-    pairwise_dist = pairwise_diff_square[:, :, 0] + pairwise_diff_square[:, :, 1]
+    pairwise_dist = pairwise_diff_square[:,
+                                         :, 0] + pairwise_diff_square[:, :, 1]
     repr_matrix = 0.5 * pairwise_dist * torch.log(pairwise_dist)
     # fix numerical error for 0 * log(0), substitute all nan with 0
     mask = repr_matrix != repr_matrix
@@ -23,8 +25,9 @@ def compute_partial_repr(input_points, control_points):
 
 
 class TPSGridGen(nn.Module):
+
     def __init__(self, target_height, target_width, target_control_points):
-        super().__init__()
+        super(TPSGridGen, self).__init__()
         assert target_control_points.ndimension() == 2
         assert target_control_points.size(1) == 2
         N = target_control_points.size(0)
@@ -34,8 +37,7 @@ class TPSGridGen(nn.Module):
         # create padded kernel matrix
         forward_kernel = torch.zeros(N + 3, N + 3)
         target_control_partial_repr = compute_partial_repr(
-            target_control_points, target_control_points
-        )
+            target_control_points, target_control_points)
         forward_kernel[:N, :N].copy_(target_control_partial_repr)
         forward_kernel[:N, -3].fill_(1)
         forward_kernel[-3, :N].fill_(1)
@@ -46,7 +48,8 @@ class TPSGridGen(nn.Module):
 
         # create target cordinate matrix
         HW = target_height * target_width
-        target_coordinate = list(itertools.product(range(target_height), range(target_width)))
+        target_coordinate = list(itertools.product(
+            range(target_height), range(target_width)))
         # print(target_coordinate)
         target_coordinate = torch.Tensor(target_coordinate)  # HW x 2
         Y, X = target_coordinate.split(1, dim=1)
@@ -55,11 +58,11 @@ class TPSGridGen(nn.Module):
         # convert from (y, x) to (x, y)
         target_coordinate = torch.cat([X, Y], dim=1)
         target_coordinate_partial_repr = compute_partial_repr(
-            target_coordinate, target_control_points
-        )
-        target_coordinate_repr = torch.cat(
-            [target_coordinate_partial_repr, torch.ones(HW, 1), target_coordinate], dim=1
-        )
+            target_coordinate, target_control_points)
+        target_coordinate_repr = torch.cat([
+            target_coordinate_partial_repr, torch.ones(
+                HW, 1), target_coordinate
+        ], dim=1)
 
         # register precomputed matrices
         self.register_buffer('inverse_kernel', inverse_kernel)
@@ -72,9 +75,9 @@ class TPSGridGen(nn.Module):
         assert source_control_points.size(2) == 2
         batch_size = source_control_points.size(0)
 
-        Y = torch.cat(
-            [source_control_points, Variable(self.padding_matrix.expand(batch_size, 3, 2))], 1
-        )
+        Y = torch.cat([source_control_points, Variable(
+            self.padding_matrix.expand(batch_size, 3, 2))], 1)
         mapping_matrix = torch.matmul(Variable(self.inverse_kernel), Y)
-        source_coordinate = torch.matmul(Variable(self.target_coordinate_repr), mapping_matrix)
+        source_coordinate = torch.matmul(
+            Variable(self.target_coordinate_repr), mapping_matrix)
         return source_coordinate

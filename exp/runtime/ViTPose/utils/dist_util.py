@@ -10,7 +10,8 @@ from typing import Callable, List, Optional, Tuple
 import torch
 import torch.multiprocessing as mp
 from torch import distributed as dist
-from torch._utils import _flatten_dense_tensors, _take_tensors, _unflatten_dense_tensors
+from torch._utils import (_flatten_dense_tensors, _take_tensors,
+                          _unflatten_dense_tensors)
 
 
 def is_mps_available() -> bool:
@@ -20,12 +21,11 @@ def is_mps_available() -> bool:
     """
     try:
         import torch
-
-        return hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()
+        return hasattr(torch.backends,
+                       'mps') and torch.backends.mps.is_available()
     except Exception:
         return False
-
-
+    
 def _find_free_port() -> str:
     # Copied from https://github.com/facebookresearch/detectron2/blob/main/detectron2/engine/launch.py # noqa: E501
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -94,7 +94,8 @@ def _init_dist_slurm(backend: str, port: Optional[int] = None) -> None:
     node_list = os.environ['SLURM_NODELIST']
     num_gpus = torch.cuda.device_count()
     torch.cuda.set_device(proc_id % num_gpus)
-    addr = subprocess.getoutput(f'scontrol show hostname {node_list} | head -n1')
+    addr = subprocess.getoutput(
+        f'scontrol show hostname {node_list} | head -n1')
     # specify master port
     if port is not None:
         os.environ['MASTER_PORT'] = str(port)
@@ -127,6 +128,7 @@ def get_dist_info() -> Tuple[int, int]:
 
 
 def master_only(func: Callable) -> Callable:
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         rank, _ = get_dist_info()
@@ -136,9 +138,9 @@ def master_only(func: Callable) -> Callable:
     return wrapper
 
 
-def allreduce_params(
-    params: List[torch.nn.Parameter], coalesce: bool = True, bucket_size_mb: int = -1
-) -> None:
+def allreduce_params(params: List[torch.nn.Parameter],
+                     coalesce: bool = True,
+                     bucket_size_mb: int = -1) -> None:
     """Allreduce parameters.
 
     Args:
@@ -160,9 +162,9 @@ def allreduce_params(
             dist.all_reduce(tensor.div_(world_size))
 
 
-def allreduce_grads(
-    params: List[torch.nn.Parameter], coalesce: bool = True, bucket_size_mb: int = -1
-) -> None:
+def allreduce_grads(params: List[torch.nn.Parameter],
+                    coalesce: bool = True,
+                    bucket_size_mb: int = -1) -> None:
     """Allreduce gradients.
 
     Args:
@@ -172,7 +174,10 @@ def allreduce_grads(
         bucket_size_mb (int, optional): Size of bucket, the unit is MB.
             Defaults to -1.
     """
-    grads = [param.grad.data for param in params if param.requires_grad and param.grad is not None]
+    grads = [
+        param.grad.data for param in params
+        if param.requires_grad and param.grad is not None
+    ]
     _, world_size = get_dist_info()
     if world_size == 1:
         return
@@ -183,7 +188,9 @@ def allreduce_grads(
             dist.all_reduce(tensor.div_(world_size))
 
 
-def _allreduce_coalesced(tensors: torch.Tensor, world_size: int, bucket_size_mb: int = -1) -> None:
+def _allreduce_coalesced(tensors: torch.Tensor,
+                         world_size: int,
+                         bucket_size_mb: int = -1) -> None:
     if bucket_size_mb > 0:
         bucket_size_bytes = bucket_size_mb * 1024 * 1024
         buckets = _take_tensors(tensors, bucket_size_bytes)
@@ -200,5 +207,6 @@ def _allreduce_coalesced(tensors: torch.Tensor, world_size: int, bucket_size_mb:
         flat_tensors = _flatten_dense_tensors(bucket)
         dist.all_reduce(flat_tensors)
         flat_tensors.div_(world_size)
-        for tensor, synced in zip(bucket, _unflatten_dense_tensors(flat_tensors, bucket)):
+        for tensor, synced in zip(
+                bucket, _unflatten_dense_tensors(flat_tensors, bucket)):
             tensor.copy_(synced)

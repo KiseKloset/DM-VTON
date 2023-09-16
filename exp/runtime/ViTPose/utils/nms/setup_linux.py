@@ -6,12 +6,11 @@
 # --------------------------------------------------------
 
 import os
-from distutils.extension import Extension
 from os.path import join as pjoin
-
-import numpy as np
-from Cython.Distutils import build_ext
 from setuptools import setup
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
+import numpy as np
 
 
 def find_in_path(name, path):
@@ -42,25 +41,18 @@ def locate_cuda():
         default_path = pjoin(os.sep, 'usr', 'local', 'cuda', 'bin')
         nvcc = find_in_path('nvcc', os.environ['PATH'] + os.pathsep + default_path)
         if nvcc is None:
-            raise OSError(
-                'The nvcc binary could not be '
-                'located in your $PATH. Either add it to your path, or set $CUDAHOME'
-            )
+            raise EnvironmentError('The nvcc binary could not be '
+                'located in your $PATH. Either add it to your path, or set $CUDAHOME')
         home = os.path.dirname(os.path.dirname(nvcc))
 
-    cudaconfig = {
-        'home': home,
-        'nvcc': nvcc,
-        'include': pjoin(home, 'include'),
-        'lib64': pjoin(home, 'lib64'),
-    }
+    cudaconfig = {'home':home, 'nvcc':nvcc,
+                  'include': pjoin(home, 'include'),
+                  'lib64': pjoin(home, 'lib64')}
     for k, v in cudaconfig.items():
         if not os.path.exists(v):
-            raise OSError('The CUDA {} path could not be located in {}'.format(k, v))
+            raise EnvironmentError('The CUDA %s path could not be located in %s' % (k, v))
 
     return cudaconfig
-
-
 CUDA = locate_cuda()
 
 
@@ -120,10 +112,9 @@ ext_modules = [
         "cpu_nms",
         ["cpu_nms.pyx"],
         extra_compile_args={'gcc': ["-Wno-cpp", "-Wno-unused-function"]},
-        include_dirs=[numpy_include],
+        include_dirs = [numpy_include]
     ),
-    Extension(
-        'gpu_nms',
+    Extension('gpu_nms',
         ['nms_kernel.cu', 'gpu_nms.pyx'],
         library_dirs=[CUDA['lib64']],
         libraries=['cudart'],
@@ -132,11 +123,13 @@ ext_modules = [
         # this syntax is specific to this build system
         # we're only going to use certain compiler args with nvcc and not with
         # gcc the implementation of this trick is in customize_compiler() below
-        extra_compile_args={
-            'gcc': ["-Wno-unused-function"],
-            'nvcc': ['-arch=sm_35', '--ptxas-options=-v', '-c', '--compiler-options', "'-fPIC'"],
-        },
-        include_dirs=[numpy_include, CUDA['include']],
+        extra_compile_args={'gcc': ["-Wno-unused-function"],
+                            'nvcc': ['-arch=sm_35',
+                                     '--ptxas-options=-v',
+                                     '-c',
+                                     '--compiler-options',
+                                     "'-fPIC'"]},
+        include_dirs = [numpy_include, CUDA['include']]
     ),
 ]
 

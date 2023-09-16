@@ -63,31 +63,11 @@ def oks_iou(g, d, a_g, a_d, sigmas=None, vis_thr=None):
         list: The oks ious.
     """
     if sigmas is None:
-        sigmas = (
-            np.array(
-                [
-                    0.26,
-                    0.25,
-                    0.25,
-                    0.35,
-                    0.35,
-                    0.79,
-                    0.79,
-                    0.72,
-                    0.72,
-                    0.62,
-                    0.62,
-                    1.07,
-                    1.07,
-                    0.87,
-                    0.87,
-                    0.89,
-                    0.89,
-                ]
-            )
-            / 10.0
-        )
-    vars = (sigmas * 2) ** 2
+        sigmas = np.array([
+            .26, .25, .25, .35, .35, .79, .79, .72, .72, .62, .62, 1.07, 1.07,
+            .87, .87, .89, .89
+        ]) / 10.0
+    vars = (sigmas * 2)**2
     xg = g[0::3]
     yg = g[1::3]
     vg = g[2::3]
@@ -137,7 +117,8 @@ def oks_nms(kpts_db, thr, sigmas=None, vis_thr=None, score_per_joint=False):
         i = order[0]
         keep.append(i)
 
-        oks_ovr = oks_iou(kpts[i], kpts[order[1:]], areas[i], areas[order[1:]], sigmas, vis_thr)
+        oks_ovr = oks_iou(kpts[i], kpts[order[1:]], areas[i], areas[order[1:]],
+                          sigmas, vis_thr)
 
         inds = np.where(oks_ovr <= thr)[0]
         order = order[inds + 1]
@@ -166,12 +147,17 @@ def _rescore(overlap, scores, thr, type='gaussian'):
         inds = np.where(overlap >= thr)[0]
         scores[inds] = scores[inds] * (1 - overlap[inds])
     else:
-        scores = scores * np.exp(-(overlap**2) / thr)
+        scores = scores * np.exp(-overlap**2 / thr)
 
     return scores
 
 
-def soft_oks_nms(kpts_db, thr, max_dets=20, sigmas=None, vis_thr=None, score_per_joint=False):
+def soft_oks_nms(kpts_db,
+                 thr,
+                 max_dets=20,
+                 sigmas=None,
+                 vis_thr=None,
+                 score_per_joint=False):
     """Soft OKS NMS implementations.
 
     Args:
@@ -203,7 +189,8 @@ def soft_oks_nms(kpts_db, thr, max_dets=20, sigmas=None, vis_thr=None, score_per
     while len(order) > 0 and keep_cnt < max_dets:
         i = order[0]
 
-        oks_ovr = oks_iou(kpts[i], kpts[order[1:]], areas[i], areas[order[1:]], sigmas, vis_thr)
+        oks_ovr = oks_iou(kpts[i], kpts[order[1:]], areas[i], areas[order[1:]],
+                          sigmas, vis_thr)
 
         order = order[1:]
         scores = _rescore(oks_ovr, scores[1:], thr)

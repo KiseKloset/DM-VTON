@@ -1,9 +1,8 @@
 # Copyright (C) 2017 NVIDIA Corporation. All rights reserved.
 # Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import os
-import sys
-
 import torch
+import sys
 
 
 class BaseModel(torch.nn.Module):
@@ -44,7 +43,7 @@ class BaseModel(torch.nn.Module):
 
     # helper saving function that can be used by subclasses
     def save_network(self, network, network_label, epoch_label, gpu_ids):
-        save_filename = '{}_net_{}.pth'.format(epoch_label, network_label)
+        save_filename = '%s_net_%s.pth' % (epoch_label, network_label)
         save_path = os.path.join(self.save_dir, save_filename)
         torch.save(network.state_dict(), save_path)
 
@@ -53,7 +52,7 @@ class BaseModel(torch.nn.Module):
         if not os.path.isfile(checkpoint_path):
             print('%s not exists yet!' % checkpoint_path)
             if network_label == 'G':
-                raise ('Generator must exist!')
+                raise('Generator must exist!')
         else:
             # network.load_state_dict(torch.load(save_path))
 

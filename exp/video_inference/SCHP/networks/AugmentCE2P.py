@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 
 """
 @Author  :   Peike Li
@@ -14,10 +15,10 @@ import functools
 
 import torch
 import torch.nn as nn
+from torch.nn import functional as F
 # Note here we adopt the InplaceABNSync implementation from https://github.com/mapillary/inplace_abn
 # By default, the InplaceABNSync module contains a BatchNorm Layer and a LeakyReLu layer
 from SCHP.modules import InPlaceABNSync
-from torch.nn import functional as F
 
 BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
 
@@ -31,7 +32,7 @@ pretrained_settings = {
             'input_range': [0, 1],
             'mean': [0.406, 0.456, 0.485],
             'std': [0.225, 0.224, 0.229],
-            'num_classes': 1000,
+            'num_classes': 1000
         }
     },
 }
@@ -39,27 +40,19 @@ pretrained_settings = {
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False)
 
 
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(
-        self, inplanes, planes, stride=1, dilation=1, downsample=None, fist_dilation=1, multi_grid=1
-    ):
-        super().__init__()
+    def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None, fist_dilation=1, multi_grid=1):
+        super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes,
-            planes,
-            kernel_size=3,
-            stride=stride,
-            padding=dilation * multi_grid,
-            dilation=dilation * multi_grid,
-            bias=False,
-        )
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
+                               padding=dilation * multi_grid, dilation=dilation * multi_grid, bias=False)
         self.bn2 = BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = BatchNorm2d(planes * 4)
@@ -99,21 +92,13 @@ class PSPModule(nn.Module):
     """
 
     def __init__(self, features, out_features=512, sizes=(1, 2, 3, 6)):
-        super().__init__()
+        super(PSPModule, self).__init__()
 
         self.stages = []
-        self.stages = nn.ModuleList(
-            [self._make_stage(features, out_features, size) for size in sizes]
-        )
+        self.stages = nn.ModuleList([self._make_stage(features, out_features, size) for size in sizes])
         self.bottleneck = nn.Sequential(
-            nn.Conv2d(
-                features + len(sizes) * out_features,
-                out_features,
-                kernel_size=3,
-                padding=1,
-                dilation=1,
-                bias=False,
-            ),
+            nn.Conv2d(features + len(sizes) * out_features, out_features, kernel_size=3, padding=1, dilation=1,
+                      bias=False),
             InPlaceABNSync(out_features),
         )
 
@@ -125,72 +110,42 @@ class PSPModule(nn.Module):
 
     def forward(self, feats):
         h, w = feats.size(2), feats.size(3)
-        priors = [
-            F.interpolate(input=stage(feats), size=(h, w), mode='bilinear', align_corners=True)
-            for stage in self.stages
-        ] + [feats]
+        priors = [F.interpolate(input=stage(feats), size=(h, w), mode='bilinear', align_corners=True) for stage in
+                  self.stages] + [feats]
         bottle = self.bottleneck(torch.cat(priors, 1))
         return bottle
 
 
 class ASPPModule(nn.Module):
     """
-    Reference:
+    Reference: 
         Chen, Liang-Chieh, et al. *"Rethinking Atrous Convolution for Semantic Image Segmentation."*
     """
 
     def __init__(self, features, inner_features=256, out_features=512, dilations=(12, 24, 36)):
-        super().__init__()
+        super(ASPPModule, self).__init__()
 
-        self.conv1 = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(features, inner_features, kernel_size=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(inner_features),
-        )
+        self.conv1 = nn.Sequential(nn.AdaptiveAvgPool2d((1, 1)),
+                                   nn.Conv2d(features, inner_features, kernel_size=1, padding=0, dilation=1,
+                                             bias=False),
+                                   InPlaceABNSync(inner_features))
         self.conv2 = nn.Sequential(
             nn.Conv2d(features, inner_features, kernel_size=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(inner_features),
-        )
+            InPlaceABNSync(inner_features))
         self.conv3 = nn.Sequential(
-            nn.Conv2d(
-                features,
-                inner_features,
-                kernel_size=3,
-                padding=dilations[0],
-                dilation=dilations[0],
-                bias=False,
-            ),
-            InPlaceABNSync(inner_features),
-        )
+            nn.Conv2d(features, inner_features, kernel_size=3, padding=dilations[0], dilation=dilations[0], bias=False),
+            InPlaceABNSync(inner_features))
         self.conv4 = nn.Sequential(
-            nn.Conv2d(
-                features,
-                inner_features,
-                kernel_size=3,
-                padding=dilations[1],
-                dilation=dilations[1],
-                bias=False,
-            ),
-            InPlaceABNSync(inner_features),
-        )
+            nn.Conv2d(features, inner_features, kernel_size=3, padding=dilations[1], dilation=dilations[1], bias=False),
+            InPlaceABNSync(inner_features))
         self.conv5 = nn.Sequential(
-            nn.Conv2d(
-                features,
-                inner_features,
-                kernel_size=3,
-                padding=dilations[2],
-                dilation=dilations[2],
-                bias=False,
-            ),
-            InPlaceABNSync(inner_features),
-        )
+            nn.Conv2d(features, inner_features, kernel_size=3, padding=dilations[2], dilation=dilations[2], bias=False),
+            InPlaceABNSync(inner_features))
 
         self.bottleneck = nn.Sequential(
-            nn.Conv2d(
-                inner_features * 5, out_features, kernel_size=1, padding=0, dilation=1, bias=False
-            ),
+            nn.Conv2d(inner_features * 5, out_features, kernel_size=1, padding=0, dilation=1, bias=False),
             InPlaceABNSync(out_features),
-            nn.Dropout2d(0.1),
+            nn.Dropout2d(0.1)
         )
 
     def forward(self, x):
@@ -214,24 +169,22 @@ class Edge_Module(nn.Module):
     """
 
     def __init__(self, in_fea=[256, 512, 1024], mid_fea=256, out_fea=2):
-        super().__init__()
+        super(Edge_Module, self).__init__()
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_fea[0], mid_fea, kernel_size=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(mid_fea),
+            InPlaceABNSync(mid_fea)
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(in_fea[1], mid_fea, kernel_size=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(mid_fea),
+            InPlaceABNSync(mid_fea)
         )
         self.conv3 = nn.Sequential(
             nn.Conv2d(in_fea[2], mid_fea, kernel_size=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(mid_fea),
+            InPlaceABNSync(mid_fea)
         )
         self.conv4 = nn.Conv2d(mid_fea, out_fea, kernel_size=3, padding=1, dilation=1, bias=True)
-        self.conv5 = nn.Conv2d(
-            out_fea * 3, out_fea, kernel_size=1, padding=0, dilation=1, bias=True
-        )
+        self.conv5 = nn.Conv2d(out_fea * 3, out_fea, kernel_size=1, padding=0, dilation=1, bias=True)
 
     def forward(self, x1, x2, x3):
         _, _, h, w = x1.size()
@@ -261,20 +214,20 @@ class Decoder_Module(nn.Module):
     """
 
     def __init__(self, num_classes):
-        super().__init__()
+        super(Decoder_Module, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(512, 256, kernel_size=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(256),
+            InPlaceABNSync(256)
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(256, 48, kernel_size=1, stride=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(48),
+            InPlaceABNSync(48)
         )
         self.conv3 = nn.Sequential(
             nn.Conv2d(304, 256, kernel_size=1, padding=0, dilation=1, bias=False),
             InPlaceABNSync(256),
             nn.Conv2d(256, 256, kernel_size=1, padding=0, dilation=1, bias=False),
-            InPlaceABNSync(256),
+            InPlaceABNSync(256)
         )
 
         self.conv4 = nn.Conv2d(256, num_classes, kernel_size=1, padding=0, dilation=1, bias=True)
@@ -292,7 +245,7 @@ class Decoder_Module(nn.Module):
 class ResNet(nn.Module):
     def __init__(self, block, layers, num_classes):
         self.inplanes = 128
-        super().__init__()
+        super(ResNet, self).__init__()
         self.conv1 = conv3x3(3, 64, stride=2)
         self.bn1 = BatchNorm2d(64)
         self.relu1 = nn.ReLU(inplace=False)
@@ -308,9 +261,7 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(
-            block, 512, layers[3], stride=1, dilation=2, multi_grid=(1, 1, 1)
-        )
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation=2, multi_grid=(1, 1, 1))
 
         self.context_encoding = PSPModule(2048, 512)
 
@@ -321,47 +272,25 @@ class ResNet(nn.Module):
             nn.Conv2d(1024, 256, kernel_size=1, padding=0, dilation=1, bias=False),
             InPlaceABNSync(256),
             nn.Dropout2d(0.1),
-            nn.Conv2d(256, num_classes, kernel_size=1, padding=0, dilation=1, bias=True),
+            nn.Conv2d(256, num_classes, kernel_size=1, padding=0, dilation=1, bias=True)
         )
 
     def _make_layer(self, block, planes, blocks, stride=1, dilation=1, multi_grid=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(
-                    self.inplanes,
-                    planes * block.expansion,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                ),
-                BatchNorm2d(planes * block.expansion, affine=affine_par),
-            )
+                nn.Conv2d(self.inplanes, planes * block.expansion,
+                          kernel_size=1, stride=stride, bias=False),
+                BatchNorm2d(planes * block.expansion, affine=affine_par))
 
         layers = []
-        generate_multi_grid = (
-            lambda index, grids: grids[index % len(grids)] if isinstance(grids, tuple) else 1
-        )
-        layers.append(
-            block(
-                self.inplanes,
-                planes,
-                stride,
-                dilation=dilation,
-                downsample=downsample,
-                multi_grid=generate_multi_grid(0, multi_grid),
-            )
-        )
+        generate_multi_grid = lambda index, grids: grids[index % len(grids)] if isinstance(grids, tuple) else 1
+        layers.append(block(self.inplanes, planes, stride, dilation=dilation, downsample=downsample,
+                            multi_grid=generate_multi_grid(0, multi_grid)))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(
-                block(
-                    self.inplanes,
-                    planes,
-                    dilation=dilation,
-                    multi_grid=generate_multi_grid(i, multi_grid),
-                )
-            )
+                block(self.inplanes, planes, dilation=dilation, multi_grid=generate_multi_grid(i, multi_grid)))
 
         return nn.Sequential(*layers)
 

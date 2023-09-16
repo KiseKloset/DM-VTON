@@ -1,5 +1,4 @@
 import time
-
 import cv2
 import numpy as np
 import torch
@@ -9,20 +8,11 @@ import torchvision
 class AttributeDict(dict):
     def __getattr__(self, attr):
         return self[attr]
-
     def __setattr__(self, attr, value):
         self[attr] = value
 
 
-def letterbox(
-    img,
-    new_shape=(640, 640),
-    color=(114, 114, 114),
-    auto=True,
-    scaleFill=False,
-    scaleup=True,
-    stride=32,
-):
+def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
     # Resize and pad image while meeting stride-multiple constraints
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
@@ -51,33 +41,19 @@ def letterbox(
         img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-    img = cv2.copyMakeBorder(
-        img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color
-    )  # add border
+    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return img, (new_unpad[1], new_unpad[0]), top, bottom, left, right
 
 
-def non_max_suppression_kpt(
-    prediction,
-    conf_thres=0.25,
-    iou_thres=0.45,
-    classes=None,
-    agnostic=False,
-    multi_label=False,
-    labels=(),
-    kpt_label=False,
-    nc=None,
-    nkpt=None,
-):
+def non_max_suppression_kpt(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
+                        labels=(), kpt_label=False, nc=None, nkpt=None):
     """Runs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
     if nc is None:
-        nc = (
-            prediction.shape[2] - 5 if not kpt_label else prediction.shape[2] - 56
-        )  # number of classes
+        nc = prediction.shape[2] - 5  if not kpt_label else prediction.shape[2] - 56 # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Settings
@@ -90,7 +66,7 @@ def non_max_suppression_kpt(
     merge = False  # use merge-NMS
 
     t = time.time()
-    output = [torch.zeros((0, 6), device=prediction.device)] * prediction.shape[0]
+    output = [torch.zeros((0,6), device=prediction.device)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -110,7 +86,7 @@ def non_max_suppression_kpt(
             continue
 
         # Compute conf
-        x[:, 5 : 5 + nc] *= x[:, 4:5]  # conf = obj_conf * cls_conf
+        x[:, 5:5+nc] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
         # Box (center x, center y, width, height) to (x1, y1, x2, y2)
         box = xywh2xyxy(x[:, :4])
@@ -127,6 +103,7 @@ def non_max_suppression_kpt(
                 kpts = x[:, 6:]
                 conf, j = x[:, 5:6].max(1, keepdim=True)
                 x = torch.cat((box, conf, j.float(), kpts), 1)[conf.view(-1) > conf_thres]
+
 
         # Filter by class
         if classes is not None:
@@ -149,13 +126,11 @@ def non_max_suppression_kpt(
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
         if i.shape[0] > max_det:  # limit detections
             i = i[:max_det]
-        if merge and (1 < n < 3e3):  # Merge NMS (boxes merged using weighted mean)
+        if merge and (1 < n < 3E3):  # Merge NMS (boxes merged using weighted mean)
             # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
             iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
             weights = iou * scores[None]  # box weights
-            x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(
-                1, keepdim=True
-            )  # merged boxes
+            x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(1, keepdim=True)  # merged boxes
             if redundant:
                 i = i[iou.sum(1) > 1]  # require redundancy
 
@@ -208,11 +183,7 @@ def box_iou(box1, box2):
     area2 = box_area(box2.T)
 
     # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    inter = (
-        (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2]))
-        .clamp(0)
-        .prod(2)
-    )
+    inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
     return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
 
 
@@ -220,18 +191,10 @@ def output_to_keypoints(output):
     # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
     targets = []
     for i, o in enumerate(output):
-        kpts = o[:, 6:]
-        o = o[:, :6]
+        kpts = o[:,6:]
+        o = o[:,:6]
         for index, (*box, conf, cls) in enumerate(o.detach().cpu().numpy()):
-            targets.append(
-                [
-                    i,
-                    cls,
-                    *list(*xyxy2xywh(np.array(box)[None])),
-                    conf,
-                    *list(kpts.detach().cpu().numpy()[index]),
-                ]
-            )
+            targets.append([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf, *list(kpts.detach().cpu().numpy()[index])])
     return np.array(targets)
 
 
@@ -253,7 +216,7 @@ def keypoints_to_mediapipe(keypoints):
     landmark = []
     for i in range(32):
         landmark.append(AttributeDict(x=0, y=0))
-
+    
     landmark[23].x = best[FIRST_KPT_IDX + 11 * 3]
     landmark[23].y = best[FIRST_KPT_IDX + 11 * 3 + 1]
 

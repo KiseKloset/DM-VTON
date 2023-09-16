@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 
-
 class Sine(nn.Module):
     def __init(self):
         super().__init__()

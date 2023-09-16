@@ -12,16 +12,16 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision as tv
-from data.data_loader_test import CreateDataLoader
-from options.test_options import TestOptions
 from torch.utils.data import DataLoader
 
-from .data.viton_dataset import LoadVITONDataset
-from .models.afwm import AFWM
+from options.test_options import TestOptions
+from data.data_loader_test import CreateDataLoader
 from .models.networks import load_checkpoint
+from .models.afwm import AFWM
 from .models.rmgn_generator import RMGNGenerator
-
-
+from .data.viton_dataset import LoadVITONDataset
+        
+        
 def run_test(dataroot, save_dir, batch_size, device):
     opt = TestOptions().parse()
     opt.dataroot = dataroot
@@ -54,30 +54,24 @@ def run_test(dataroot, save_dir, batch_size, device):
             edge = torch.FloatTensor((edge.detach().numpy() > 0.5).astype(np.int64))
             clothes = clothes * edge
             flow_out = warp_model(real_image.to(device), clothes.to(device))
-            (
-                warped_cloth,
-                last_flow,
-            ) = flow_out
-            warped_edge = F.grid_sample(
-                edge.to(device),
-                last_flow.permute(0, 2, 3, 1),
-                mode='bilinear',
-                padding_mode='zeros',
-            )
-
+            warped_cloth, last_flow, = flow_out
+            warped_edge = F.grid_sample(edge.to(device), last_flow.permute(0, 2, 3, 1),
+                            mode='bilinear', padding_mode='zeros')
+            
             gen_inputs_clothes = torch.cat([warped_cloth, warped_edge], 1)
             gen_inputs_persons = real_image.to(device)
-
+            
             gen_outputs, out_L1, out_L2, M_list = gen_model(gen_inputs_persons, gen_inputs_clothes)
+            
+            if True: #opt.predmask:
 
-            if True:  # opt.predmask:
                 p_rendered, m_composite = torch.split(gen_outputs, [3, 1], 1)
-
+                
                 p_rendered = torch.tanh(p_rendered)
                 m_composite = torch.sigmoid(m_composite)
                 m_composite = m_composite * warped_edge
                 p_tryon = warped_cloth * m_composite + p_rendered * (1 - m_composite)
-
+                
             else:
                 p_rendered = gen_outputs
                 p_rendered = torch.tanh(p_rendered)
@@ -91,5 +85,5 @@ def run_test(dataroot, save_dir, batch_size, device):
                     tryon_dir / p_name,
                     nrow=int(1),
                     normalize=True,
-                    value_range=(-1, 1),
+                    value_range=(-1,1),
                 )

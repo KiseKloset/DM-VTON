@@ -1,20 +1,21 @@
 #!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 
 """
 @Author  :   Peike Li
 @Contact :   peike.li@yahoo.com
 @File    :   resnext.py.py
 @Time    :   8/11/19 8:58 PM
-@Desc    :
-@License :   This source code is licensed under the license found in the
+@Desc    :   
+@License :   This source code is licensed under the license found in the 
              LICENSE file in the root directory of this source tree.
 """
 import functools
-import math
-
 import torch.nn as nn
-from modules import InPlaceABNSync
+import math
 from torch.utils.model_zoo import load_url
+
+from modules import InPlaceABNSync
 
 BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
 
@@ -22,25 +23,25 @@ __all__ = ['ResNeXt', 'resnext101']  # support resnext 101
 
 model_urls = {
     'resnext50': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnext50-imagenet.pth',
-    'resnext101': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnext101-imagenet.pth',
+    'resnext101': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnext101-imagenet.pth'
 }
 
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False)
 
 
 class GroupBottleneck(nn.Module):
     expansion = 2
 
     def __init__(self, inplanes, planes, stride=1, groups=1, downsample=None):
-        super().__init__()
+        super(GroupBottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=stride, padding=1, groups=groups, bias=False
-        )
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
+                               padding=1, groups=groups, bias=False)
         self.bn2 = BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 2, kernel_size=1, bias=False)
         self.bn3 = BatchNorm2d(planes * 2)
@@ -72,9 +73,10 @@ class GroupBottleneck(nn.Module):
 
 
 class ResNeXt(nn.Module):
+
     def __init__(self, block, layers, groups=32, num_classes=1000):
         self.inplanes = 128
-        super().__init__()
+        super(ResNeXt, self).__init__()
         self.conv1 = conv3x3(3, 64, stride=2)
         self.bn1 = BatchNorm2d(64)
         self.relu1 = nn.ReLU(inplace=True)
@@ -96,7 +98,7 @@ class ResNeXt(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels // m.groups
-                m.weight.data.normal_(0, math.sqrt(2.0 / n))
+                m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -105,13 +107,8 @@ class ResNeXt(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(
-                    self.inplanes,
-                    planes * block.expansion,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                ),
+                nn.Conv2d(self.inplanes, planes * block.expansion,
+                          kernel_size=1, stride=stride, bias=False),
                 BatchNorm2d(planes * block.expansion),
             )
 

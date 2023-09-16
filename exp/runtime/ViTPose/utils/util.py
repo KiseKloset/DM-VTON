@@ -1,12 +1,14 @@
 import os
-import os.path as osp
-import random
 import warnings
-from collections import OrderedDict
-
+import random
 import numpy as np
+
+from collections import OrderedDict
+import os.path as osp
+
 import torch
 import torch.nn as nn
+
 from torch import distributed as dist
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 
@@ -48,7 +50,9 @@ def init_random_seed(seed=None, device='cuda'):
     return random_num.item()
 
 
-def set_random_seed(seed: int, deterministic: bool = False, use_rank_shift: bool = False) -> None:
+def set_random_seed(seed: int,
+                    deterministic: bool = False,
+                    use_rank_shift: bool = False) -> None:
     """Set random seed.
 
     Args:
@@ -73,10 +77,8 @@ def set_random_seed(seed: int, deterministic: bool = False, use_rank_shift: bool
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-
 def is_module_wrapper(module: nn.Module) -> bool:
-    """Check if module wrrapper exists recursively"""
-
+    """ Check if module wrrapper exists recursively """
     def is_module_in_wrapper(module, module_wrapper):
         module_wrappers = tuple(module_wrapper.module_dict.values())
         if isinstance(module, module_wrappers):
@@ -84,7 +86,6 @@ def is_module_wrapper(module: nn.Module) -> bool:
         for child in module_wrapper.children.values():
             if is_module_in_wrapper(module, child):
                 return True
-
     return is_module_in_wrapper(module, MODULE_WRAPPERS)
 
 
@@ -119,10 +120,11 @@ def load_state_dict(module, state_dict, strict=False, logger=None):
         # complicated structure, e.g., nn.Module(nn.Module(DDP))
         if is_module_wrapper(module):
             module = module.module
-        local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
-        module._load_from_state_dict(
-            state_dict, prefix, local_metadata, True, all_missing_keys, unexpected_keys, err_msg
-        )
+        local_metadata = {} if metadata is None else metadata.get(
+            prefix[:-1], {})
+        module._load_from_state_dict(state_dict, prefix, local_metadata, True,
+                                     all_missing_keys, unexpected_keys,
+                                     err_msg)
         for name, child in module._modules.items():
             if child is not None:
                 load(child, prefix + name + '.')
@@ -131,16 +133,21 @@ def load_state_dict(module, state_dict, strict=False, logger=None):
     load = None  # break load->load reference cycle
 
     # ignore "num_batches_tracked" of BN layers
-    missing_keys = [key for key in all_missing_keys if 'num_batches_tracked' not in key]
+    missing_keys = [
+        key for key in all_missing_keys if 'num_batches_tracked' not in key
+    ]
 
     if unexpected_keys:
-        err_msg.append('unexpected key in source ' f'state_dict: {", ".join(unexpected_keys)}\n')
+        err_msg.append('unexpected key in source '
+                       f'state_dict: {", ".join(unexpected_keys)}\n')
     if missing_keys:
-        err_msg.append(f'missing keys in source state_dict: {", ".join(missing_keys)}\n')
+        err_msg.append(
+            f'missing keys in source state_dict: {", ".join(missing_keys)}\n')
 
     rank, _ = get_dist_info()
     if len(err_msg) > 0 and rank == 0:
-        err_msg.insert(0, 'The model and loaded state dict do not match exactly\n')
+        err_msg.insert(
+            0, 'The model and loaded state dict do not match exactly\n')
         err_msg = '\n'.join(err_msg)
         if strict:
             raise RuntimeError(err_msg)
@@ -150,7 +157,11 @@ def load_state_dict(module, state_dict, strict=False, logger=None):
             print(err_msg)
 
 
-def load_checkpoint(model, filename, map_location='cpu', strict=False, logger=None):
+def load_checkpoint(model,
+                    filename,
+                    map_location='cpu',
+                    strict=False,
+                    logger=None):
     """Load checkpoint from a file or URI.
 
     Args:
@@ -168,7 +179,8 @@ def load_checkpoint(model, filename, map_location='cpu', strict=False, logger=No
     checkpoint = torch.load(filename, map_location=map_location)
     # OrderedDict is a subclass of dict
     if not isinstance(checkpoint, dict):
-        raise RuntimeError(f'No state_dict found in checkpoint file {filename}')
+        raise RuntimeError(
+            f'No state_dict found in checkpoint file {filename}')
     # get state_dict from checkpoint
     if 'state_dict' in checkpoint:
         state_dict_tmp = checkpoint['state_dict']
@@ -191,35 +203,38 @@ def load_checkpoint(model, filename, map_location='cpu', strict=False, logger=No
     return checkpoint
 
 
-def resize(input, size=None, scale_factor=None, mode='nearest', align_corners=None, warning=True):
+def resize(input,
+           size=None,
+           scale_factor=None,
+           mode='nearest',
+           align_corners=None,
+           warning=True):
     if warning:
         if size is not None and align_corners:
             input_h, input_w = tuple(int(x) for x in input.shape[2:])
             output_h, output_w = tuple(int(x) for x in size)
             if output_h > input_h or output_w > output_h:
-                if (
-                    (output_h > 1 and output_w > 1 and input_h > 1 and input_w > 1)
-                    and (output_h - 1) % (input_h - 1)
-                    and (output_w - 1) % (input_w - 1)
-                ):
+                if ((output_h > 1 and output_w > 1 and input_h > 1
+                     and input_w > 1) and (output_h - 1) % (input_h - 1)
+                        and (output_w - 1) % (input_w - 1)):
                     warnings.warn(
                         f'When align_corners={align_corners}, '
                         'the output would more aligned if '
                         f'input size {(input_h, input_w)} is `x+1` and '
-                        f'out size {(output_h, output_w)} is `nx+1`'
-                    )
+                        f'out size {(output_h, output_w)} is `nx+1`')
     if isinstance(size, torch.Size):
         size = tuple(int(x) for x in size)
-
-
+        
 def constant_init(module: nn.Module, val: float, bias: float = 0) -> None:
     if hasattr(module, 'weight') and module.weight is not None:
         nn.init.constant_(module.weight, val)
     if hasattr(module, 'bias') and module.bias is not None:
         nn.init.constant_(module.bias, bias)
 
-
-def normal_init(module: nn.Module, mean: float = 0, std: float = 1, bias: float = 0) -> None:
+def normal_init(module: nn.Module,
+                mean: float = 0,
+                std: float = 1,
+                bias: float = 0) -> None:
     if hasattr(module, 'weight') and module.weight is not None:
         nn.init.normal_(module.weight, mean, std)
     if hasattr(module, 'bias') and module.bias is not None:

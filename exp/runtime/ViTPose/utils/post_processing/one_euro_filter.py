@@ -17,7 +17,14 @@ def exponential_smoothing(a, x, x_prev):
 
 
 class OneEuroFilter:
-    def __init__(self, x0, dx0=0.0, min_cutoff=1.7, beta=0.3, d_cutoff=30.0, fps=None):
+
+    def __init__(self,
+                 x0,
+                 dx0=0.0,
+                 min_cutoff=1.7,
+                 beta=0.3,
+                 d_cutoff=30.0,
+                 fps=None):
         """One Euro Filter for keypoints smoothing.
 
         Args:

@@ -1,6 +1,5 @@
 import json
 import os
-
 import cv2
 
 json_file = os.path.join('/ssd1/liuting14/Dataset/LIP', 'annotations', 'test.json')
@@ -16,7 +15,7 @@ for item in data_list:
     h, w, c = im.shape
     item['img_height'] = h
     item['img_width'] = w
-    item['center'] = [h / 2, w / 2]
+    item['center'] = [h/2, w/2]
 
 with open(json_file, "w") as f:
     json.dump(data_json, f, indent=2)

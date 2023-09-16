@@ -9,7 +9,7 @@ from torch.nn import init
 
 class BaseNetwork(nn.Module):
     def __init__(self):
-        super().__init__()
+        super(BaseNetwork, self).__init__()
 
     def init_weights(self, init_type='xavier', gain=0.02):
         def init_func(m):
@@ -20,9 +20,7 @@ class BaseNetwork(nn.Module):
                     init.normal_(m.weight.data, 1.0, gain)
                 if hasattr(m, 'bias') and m.bias is not None:
                     init.constant_(m.bias.data, 0.0)
-            elif hasattr(m, 'weight') and (
-                classname.find('Conv') != -1 or classname.find('Linear') != -1
-            ):
+            elif hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
                 if init_type == 'normal':
                     init.normal_(m.weight.data, 0.0, gain)
                 elif init_type == 'xavier':
@@ -36,9 +34,7 @@ class BaseNetwork(nn.Module):
                 elif init_type == 'none':  # uses pytorch's default init method
                     m.reset_parameters()
                 else:
-                    raise NotImplementedError(
-                        'initialization method [%s] is not implemented' % init_type
-                    )
+                    raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
                 if hasattr(m, 'bias') and m.bias is not None:
                     init.constant_(m.bias.data, 0.0)
 

@@ -4,9 +4,10 @@ import torch
 import torch.nn as nn
 from timm.models.layers import to_2tuple, trunc_normal_
 
-
 class EqualLinear(nn.Module):
-    def __init__(self, in_dim, out_dim, bias=True, bias_init=0, lr_mul=1, activation=None):
+    def __init__(
+        self, in_dim, out_dim, bias=True, bias_init=0, lr_mul=1, activation=None
+    ):
         super().__init__()
 
         self.weight = nn.Parameter(torch.randn(out_dim, in_dim).div_(lr_mul))
@@ -28,19 +29,20 @@ class EqualLinear(nn.Module):
             out = fused_leaky_relu(out, self.bias * self.lr_mul)
 
         else:
-            out = F.linear(input, self.weight * self.scale, bias=self.bias * self.lr_mul)
+            out = F.linear(
+                input, self.weight * self.scale, bias=self.bias * self.lr_mul
+            )
 
         return out
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.weight.shape[1]}, {self.weight.shape[0]})'
-
+        return (
+            f'{self.__class__.__name__}({self.weight.shape[1]}, {self.weight.shape[0]})'
+        )
 
 #########################################################################################################
 class Mlp(nn.Module):
-    def __init__(
-        self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.0
-    ):
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -92,7 +94,7 @@ def window_reverse(windows, window_size, H, W):
 
 
 class WindowAttention(nn.Module):
-    r"""Window based multi-head self attention (W-MSA) module with relative position bias.
+    r""" Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
 
     Args:
@@ -104,19 +106,19 @@ class WindowAttention(nn.Module):
         attn_drop (float, optional): Dropout ratio of attention weight. Default: 0.0
     """
 
-    def __init__(self, dim, window_size, num_heads, qk_scale=None, attn_drop=0.0):
+    def __init__(self, dim, window_size, num_heads, qk_scale=None, attn_drop=0.):
+
         super().__init__()
         self.dim = dim
         self.window_size = window_size  # Wh, Ww
         self.num_heads = num_heads
         head_dim = dim // num_heads
         self.head_dim = head_dim
-        self.scale = qk_scale or head_dim**-0.5
+        self.scale = qk_scale or head_dim ** -0.5
 
         # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
-            torch.zeros((2 * window_size[0] - 1) * (2 * window_size[1] - 1), num_heads)
-        )  # 2*Wh-1 * 2*Ww-1, nH
+            torch.zeros((2 * window_size[0] - 1) * (2 * window_size[1] - 1), num_heads))  # 2*Wh-1 * 2*Ww-1, nH
 
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size[0])
@@ -130,7 +132,7 @@ class WindowAttention(nn.Module):
         relative_coords[:, :, 0] *= 2 * self.window_size[1] - 1
         relative_position_index = relative_coords.sum(-1)  # Wh*Ww, Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
-        trunc_normal_(self.relative_position_bias_table, std=0.02)
+        trunc_normal_(self.relative_position_bias_table, std=.02)
 
         self.attn_drop = nn.Dropout(attn_drop)
 
@@ -150,16 +152,11 @@ class WindowAttention(nn.Module):
         v = v.reshape(B_, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
 
         q = q * self.scale
-        attn = q @ k.transpose(-2, -1)
+        attn = (q @ k.transpose(-2, -1))
 
-        relative_position_bias = self.relative_position_bias_table[
-            self.relative_position_index.view(-1)
-        ].view(
-            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1
-        )  # Wh*Ww,Wh*Ww,nH
-        relative_position_bias = relative_position_bias.permute(
-            2, 0, 1
-        ).contiguous()  # nH, Wh*Ww, Wh*Ww
+        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
+            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1)  # Wh*Ww,Wh*Ww,nH
+        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
         attn = attn + relative_position_bias.unsqueeze(0)
 
         if mask is not None:
@@ -172,7 +169,7 @@ class WindowAttention(nn.Module):
 
         attn = self.attn_drop(attn)
         x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
-
+        
         return x
 
     def extra_repr(self) -> str:
@@ -208,7 +205,7 @@ class AdaptiveInstanceNorm(nn.Module):
 
 
 class StyleSwinTransformerBlock(nn.Module):
-    r"""StyleSwin Transformer Block.
+    r""" StyleSwin Transformer Block.
 
     Args:
         dim (int): Number of input channels.
@@ -226,20 +223,9 @@ class StyleSwinTransformerBlock(nn.Module):
         style_dim (int): Dimension of style vector.
     """
 
-    def __init__(
-        self,
-        dim,
-        input_resolution,
-        num_heads,
-        window_size=7,
-        mlp_ratio=4.0,
-        qkv_bias=True,
-        qk_scale=None,
-        drop=0.0,
-        attn_drop=0.0,
-        act_layer=nn.GELU,
-        style_dim=512,
-    ):
+    def __init__(self, dim, input_resolution, num_heads, window_size=7,
+                 mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
+                 act_layer=nn.GELU, style_dim=512):
         super().__init__()
         self.dim = dim
         self.input_resolution = input_resolution
@@ -257,41 +243,27 @@ class StyleSwinTransformerBlock(nn.Module):
         self.norm1 = AdaptiveInstanceNorm(dim, style_dim)
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.proj = nn.Linear(dim, dim)
-        self.attn = nn.ModuleList(
-            [
-                WindowAttention(
-                    dim // 2,
-                    window_size=to_2tuple(self.window_size),
-                    num_heads=num_heads // 2,
-                    qk_scale=qk_scale,
-                    attn_drop=attn_drop,
-                ),
-                WindowAttention(
-                    dim // 2,
-                    window_size=to_2tuple(self.window_size),
-                    num_heads=num_heads // 2,
-                    qk_scale=qk_scale,
-                    attn_drop=attn_drop,
-                ),
-            ]
-        )
-
+        self.attn = nn.ModuleList([
+            WindowAttention(
+                dim // 2, window_size=to_2tuple(self.window_size), num_heads=num_heads // 2,
+                qk_scale=qk_scale, attn_drop=attn_drop),
+            WindowAttention(
+                dim // 2, window_size=to_2tuple(self.window_size), num_heads=num_heads // 2,
+                qk_scale=qk_scale, attn_drop=attn_drop),
+        ])
+        
         attn_mask1 = None
         attn_mask2 = None
         if self.shift_size > 0:
             # calculate attention mask for SW-MSA
             H, W = self.input_resolution
             img_mask = torch.zeros((1, H, W, 1))  # 1 H W 1
-            h_slices = (
-                slice(0, -self.window_size),
-                slice(-self.window_size, -self.shift_size),
-                slice(-self.shift_size, None),
-            )
-            w_slices = (
-                slice(0, -self.window_size),
-                slice(-self.window_size, -self.shift_size),
-                slice(-self.shift_size, None),
-            )
+            h_slices = (slice(0, -self.window_size),
+                        slice(-self.window_size, -self.shift_size),
+                        slice(-self.shift_size, None))
+            w_slices = (slice(0, -self.window_size),
+                        slice(-self.window_size, -self.shift_size),
+                        slice(-self.shift_size, None))
             cnt = 0
             for h in h_slices:
                 for w in w_slices:
@@ -300,51 +272,43 @@ class StyleSwinTransformerBlock(nn.Module):
 
             # nW, window_size, window_size, 1
             mask_windows = window_partition(img_mask, self.window_size)
-            mask_windows = mask_windows.view(-1, self.window_size * self.window_size)
+            mask_windows = mask_windows.view(-1,
+                                            self.window_size * self.window_size)
             attn_mask2 = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
-            attn_mask2 = attn_mask2.masked_fill(attn_mask2 != 0, float(-100.0)).masked_fill(
-                attn_mask2 == 0, float(0.0)
-            )
-
+            attn_mask2 = attn_mask2.masked_fill(
+                attn_mask2 != 0, float(-100.0)).masked_fill(attn_mask2 == 0, float(0.0))
+        
         self.register_buffer("attn_mask1", attn_mask1)
         self.register_buffer("attn_mask2", attn_mask2)
 
         self.norm2 = AdaptiveInstanceNorm(dim, style_dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Mlp(
-            in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop
-        )
+        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
     def forward(self, x, style):
         H, W = self.input_resolution
         B, L, C = x.shape
         assert L == H * W, "input feature has wrong size"
-
+        
         # Double Attn
         shortcut = x
         x = self.norm1(x.transpose(-1, -2), style).transpose(-1, -2)
-
+        
         qkv = self.qkv(x).reshape(B, -1, 3, C).permute(2, 0, 1, 3).reshape(3 * B, H, W, C)
         qkv_1 = qkv[:, :, :, : C // 2].reshape(3, B, H, W, C // 2)
         if self.shift_size > 0:
-            qkv_2 = torch.roll(
-                qkv[:, :, :, C // 2 :], shifts=(-self.shift_size, -self.shift_size), dims=(1, 2)
-            ).reshape(3, B, H, W, C // 2)
+            qkv_2 = torch.roll(qkv[:, :, :, C // 2:], shifts=(-self.shift_size, -self.shift_size), dims=(1, 2)).reshape(3, B, H, W, C // 2)
         else:
-            qkv_2 = qkv[:, :, :, C // 2 :].reshape(3, B, H, W, C // 2)
-
+            qkv_2 = qkv[:, :, :, C // 2:].reshape(3, B, H, W, C // 2)
+        
         q1_windows, k1_windows, v1_windows = self.get_window_qkv(qkv_1)
         q2_windows, k2_windows, v2_windows = self.get_window_qkv(qkv_2)
 
         x1 = self.attn[0](q1_windows, k1_windows, v1_windows, self.attn_mask1)
         x2 = self.attn[1](q2_windows, k2_windows, v2_windows, self.attn_mask2)
-
-        x1 = window_reverse(
-            x1.view(-1, self.window_size * self.window_size, C // 2), self.window_size, H, W
-        )
-        x2 = window_reverse(
-            x2.view(-1, self.window_size * self.window_size, C // 2), self.window_size, H, W
-        )
+        
+        x1 = window_reverse(x1.view(-1, self.window_size * self.window_size, C // 2), self.window_size, H, W)
+        x2 = window_reverse(x2.view(-1, self.window_size * self.window_size, C // 2), self.window_size, H, W)
 
         if self.shift_size > 0:
             x2 = torch.roll(x2, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
@@ -359,26 +323,18 @@ class StyleSwinTransformerBlock(nn.Module):
         x = x + self.mlp(self.norm2(x.transpose(-1, -2), style).transpose(-1, -2))
 
         return x
-
+    
     def get_window_qkv(self, qkv):
-        q, k, v = qkv[0], qkv[1], qkv[2]  # B, H, W, C
+        q, k, v = qkv[0], qkv[1], qkv[2]   # B, H, W, C
         C = q.shape[-1]
-        q_windows = window_partition(q, self.window_size).view(
-            -1, self.window_size * self.window_size, C
-        )  # nW*B, window_size*window_size, C
-        k_windows = window_partition(k, self.window_size).view(
-            -1, self.window_size * self.window_size, C
-        )  # nW*B, window_size*window_size, C
-        v_windows = window_partition(v, self.window_size).view(
-            -1, self.window_size * self.window_size, C
-        )  # nW*B, window_size*window_size, C
+        q_windows = window_partition(q, self.window_size).view(-1, self.window_size * self.window_size, C)  # nW*B, window_size*window_size, C
+        k_windows = window_partition(k, self.window_size).view(-1, self.window_size * self.window_size, C)  # nW*B, window_size*window_size, C
+        v_windows = window_partition(v, self.window_size).view(-1, self.window_size * self.window_size, C)  # nW*B, window_size*window_size, C
         return q_windows, k_windows, v_windows
 
     def extra_repr(self) -> str:
-        return (
-            f"dim={self.dim}, input_resolution={self.input_resolution}, num_heads={self.num_heads}, "
-            f"window_size={self.window_size}, shift_size={self.shift_size}, mlp_ratio={self.mlp_ratio}"
-        )
+        return f"dim={self.dim}, input_resolution={self.input_resolution}, num_heads={self.num_heads}, " \
+               f"window_size={self.window_size}, shift_size={self.shift_size}, mlp_ratio={self.mlp_ratio}"
 
     def flops(self):
         flops = 0
