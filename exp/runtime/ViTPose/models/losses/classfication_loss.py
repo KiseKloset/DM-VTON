@@ -2,14 +2,13 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 __all__ = ['BCELoss']
 
 
 class BCELoss(nn.Module):
     """Binary Cross Entropy loss."""
 
-    def __init__(self, use_target_weight=False, loss_weight=1.):
+    def __init__(self, use_target_weight=False, loss_weight=1.0):
         super().__init__()
         self.criterion = F.binary_cross_entropy
         self.use_target_weight = use_target_weight

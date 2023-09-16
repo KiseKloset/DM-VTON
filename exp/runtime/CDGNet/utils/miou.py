@@ -1,18 +1,40 @@
-import numpy as np
-import cv2
-import os
-import json
-from collections import OrderedDict
 import argparse
+import json
+import os
+from collections import OrderedDict
+
+import cv2
+import numpy as np
 from PIL import Image as PILImage
+
 from utils.transforms import transform_parsing
 
-LABELS = ['Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'Upper-clothes', 'Dress', 'Coat', \
-          'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
-          'Right-leg', 'Left-shoe', 'Right-shoe']
+LABELS = [
+    'Background',
+    'Hat',
+    'Hair',
+    'Glove',
+    'Sunglasses',
+    'Upper-clothes',
+    'Dress',
+    'Coat',
+    'Socks',
+    'Pants',
+    'Jumpsuits',
+    'Scarf',
+    'Skirt',
+    'Face',
+    'Left-arm',
+    'Right-arm',
+    'Left-leg',
+    'Right-leg',
+    'Left-shoe',
+    'Right-shoe',
+]
+
 
 def get_palette(num_cls):
-    """ Returns the color map for visualizing the segmentation mask.
+    """Returns the color map for visualizing the segmentation mask.
     Args:
         num_cls: Number of classes
     Returns:
@@ -28,12 +50,13 @@ def get_palette(num_cls):
         palette[j * 3 + 2] = 0
         i = 0
         while lab:
-            palette[j * 3 + 0] |= (((lab >> 0) & 1) << (7 - i))
-            palette[j * 3 + 1] |= (((lab >> 1) & 1) << (7 - i))
-            palette[j * 3 + 2] |= (((lab >> 2) & 1) << (7 - i))
+            palette[j * 3 + 0] |= ((lab >> 0) & 1) << (7 - i)
+            palette[j * 3 + 1] |= ((lab >> 1) & 1) << (7 - i)
+            palette[j * 3 + 2] |= ((lab >> 2) & 1) << (7 - i)
             i += 1
             lab >>= 3
     return palette
+
 
 def get_confusion_matrix(gt_label, pred_label, num_classes):
     """
@@ -56,7 +79,9 @@ def get_confusion_matrix(gt_label, pred_label, num_classes):
     return confusion_matrix
 
 
-def compute_mean_ioU(preds, scales, centers, num_classes, datadir, input_size=[473, 473], dataset='val'):
+def compute_mean_ioU(
+    preds, scales, centers, num_classes, datadir, input_size=[473, 473], dataset='val'
+):
     list_path = os.path.join(datadir, dataset + '_id.txt')
     val_id = [i_id.strip() for i_id in open(list_path)]
 
@@ -87,7 +112,7 @@ def compute_mean_ioU(preds, scales, centers, num_classes, datadir, input_size=[4
 
     pixel_accuracy = (tp.sum() / pos.sum()) * 100
     mean_accuracy = ((tp / np.maximum(1.0, pos)).mean()) * 100
-    IoU_array = (tp / np.maximum(1.0, pos + res - tp))
+    IoU_array = tp / np.maximum(1.0, pos + res - tp)
     IoU_array = IoU_array * 100
     mean_IoU = IoU_array.mean()
     print('Pixel accuracy: %f \n' % pixel_accuracy)
@@ -103,6 +128,7 @@ def compute_mean_ioU(preds, scales, centers, num_classes, datadir, input_size=[4
     name_value.append(('Mean IU', mean_IoU))
     name_value = OrderedDict(name_value)
     return name_value
+
 
 def compute_mean_ioU_file(preds_dir, num_classes, datadir, dataset='val'):
     list_path = os.path.join(datadir, dataset + '_id.txt')
@@ -131,10 +157,10 @@ def compute_mean_ioU_file(preds_dir, num_classes, datadir, dataset='val'):
     res = confusion_matrix.sum(0)
     tp = np.diag(confusion_matrix)
 
-    pixel_accuracy = (tp.sum() / pos.sum())*100
-    mean_accuracy = ((tp / np.maximum(1.0, pos)).mean())*100
-    IoU_array = (tp / np.maximum(1.0, pos + res - tp))
-    IoU_array = IoU_array*100
+    pixel_accuracy = (tp.sum() / pos.sum()) * 100
+    mean_accuracy = ((tp / np.maximum(1.0, pos)).mean()) * 100
+    IoU_array = tp / np.maximum(1.0, pos + res - tp)
+    IoU_array = IoU_array * 100
     mean_IoU = IoU_array.mean()
     print('Pixel accuracy: %f \n' % pixel_accuracy)
     print('Mean accuracy: %f \n' % mean_accuracy)
@@ -150,6 +176,7 @@ def compute_mean_ioU_file(preds_dir, num_classes, datadir, dataset='val'):
     name_value = OrderedDict(name_value)
     return name_value
 
+
 def write_results(preds, scales, centers, datadir, dataset, result_dir, input_size=[473, 473]):
     palette = get_palette(20)
     if not os.path.exists(result_dir):
@@ -164,12 +191,13 @@ def write_results(preds, scales, centers, datadir, dataset, result_dir, input_si
         w = item['img_width']
         h = item['img_height']
         pred = transform_parsing(pred_out, c, s, w, h, input_size)
-        #pred = pred_out
-        save_path = os.path.join(result_dir, im_name[:-4]+'.png')
+        # pred = pred_out
+        save_path = os.path.join(result_dir, im_name[:-4] + '.png')
 
         output_im = PILImage.fromarray(np.asarray(pred, dtype=np.uint8))
         output_im.putpalette(palette)
         output_im.save(save_path)
+
 
 def get_arguments():
     """Parse all the arguments provided from the CLI.
@@ -178,10 +206,8 @@ def get_arguments():
       A list of parsed arguments.
     """
     parser = argparse.ArgumentParser(description="DeepLabLFOV NetworkEv")
-    parser.add_argument("--pred-path", type=str, default='',
-                        help="Path to predicted segmentation.")
-    parser.add_argument("--gt-path", type=str, default='',
-                        help="Path to the groundtruth dir.")
+    parser.add_argument("--pred-path", type=str, default='', help="Path to predicted segmentation.")
+    parser.add_argument("--gt-path", type=str, default='', help="Path to the groundtruth dir.")
 
     return parser.parse_args()
 

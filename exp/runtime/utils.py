@@ -3,6 +3,7 @@ import time
 
 import torch
 
+
 class Profile(contextlib.ContextDecorator):
     """
     YOLOv8 Profile class.

@@ -10,7 +10,7 @@ from torch.nn import init
 
 class BaseNetwork(nn.Module, abc.ABC):
     def __init__(self):
-        super(BaseNetwork, self).__init__()
+        super().__init__()
 
     @staticmethod
     def modify_commandline_options(parser, is_train):

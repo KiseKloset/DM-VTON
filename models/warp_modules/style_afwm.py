@@ -622,5 +622,7 @@ class StyleAFWM(BaseModel):
                 delta_y_all,
             )
         elif phase == 'test':
-            x_warp, last_flow = self.aflow_net(image_input, image_pyramids, cond_pyramids, phase=phase)
+            x_warp, last_flow = self.aflow_net(
+                image_input, image_pyramids, cond_pyramids, phase=phase
+            )
             return x_warp, last_flow

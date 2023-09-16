@@ -5,7 +5,7 @@ from torchvision import models
 
 class Vgg19(nn.Module):
     def __init__(self, requires_grad=False):
-        super(Vgg19, self).__init__()
+        super().__init__()
         vgg_pretrained_features = models.vgg19(pretrained=True).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
@@ -34,5 +34,3 @@ class Vgg19(nn.Module):
         h_relu5 = self.slice5(h_relu4)
         out = [h_relu1, h_relu2, h_relu3, h_relu4, h_relu5]
         return out
-
-

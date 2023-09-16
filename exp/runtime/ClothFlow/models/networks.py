@@ -1,13 +1,14 @@
 """FPN in PyTorch.
 See the paper "Feature Pyramid Networks for Object Detection" for more details.
 """
+import functools
+
 import torch
+import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import init
 from torch.autograd import Variable
-import torch.autograd as autograd
-import functools
+from torch.nn import init
 
 ###############################################################################
 # Blocks
@@ -16,7 +17,7 @@ import functools
 
 class ResBlock(nn.Module):
     def __init__(self, dim, norm="instance", activation="relu", pad_type="zero"):
-        super(ResBlock, self).__init__()
+        super().__init__()
 
         model = []
         model += [
@@ -54,7 +55,7 @@ class Conv2dBlock(nn.Module):
         elif pad_type == "zero":
             self.pad = nn.ZeroPad2d(padding)
         else:
-            assert 0, "Unsupported padding type: {}".format(pad_type)
+            assert 0, f"Unsupported padding type: {pad_type}"
 
         # initialize normalization
         norm_dim = output_dim
@@ -66,7 +67,7 @@ class Conv2dBlock(nn.Module):
         elif norm == "none":
             self.norm = None
         else:
-            assert 0, "Unsupported normalization: {}".format(norm)
+            assert 0, f"Unsupported normalization: {norm}"
 
         # initialize activation
         if activation == "relu":
@@ -85,7 +86,7 @@ class Conv2dBlock(nn.Module):
         elif activation == "none":
             self.activation = None
         else:
-            assert 0, "Unsupported activation: {}".format(activation)
+            assert 0, f"Unsupported activation: {activation}"
 
         # initialize convolution
         self.conv = nn.Conv2d(input_dim, output_dim, kernel_size, stride, bias=self.use_bias)
@@ -101,7 +102,7 @@ class Conv2dBlock(nn.Module):
 
 class ResBlockDown(nn.Module):
     def __init__(self, dim_in, dim_out, norm="batch", activation="relu", pad_type="zero"):
-        super(ResBlockDown, self).__init__()
+        super().__init__()
 
         model = []
         model += [
@@ -123,7 +124,7 @@ class ResBlockDown(nn.Module):
 
 class ResBlockFPN(nn.Module):
     def __init__(self, num_blocks=5, input_nc=3):
-        super(ResBlockFPN, self).__init__()
+        super().__init__()
         self.layer1 = ResBlockDown(input_nc, 64)
         self.layer2 = ResBlockDown(64, 128)
         self.layer3 = ResBlockDown(128, 256)
@@ -176,7 +177,7 @@ class ResBlockFPN(nn.Module):
 
 class FlowEstimator(nn.Module):
     def __init__(self, input_nc=256):  #! Should be FPN first channel * 4
-        super(FlowEstimator, self).__init__()
+        super().__init__()
         self.SourceFPN = ResBlockFPN(input_nc=4)
         self.TargetFPN = ResBlockFPN(input_nc=1)
         self.e5 = self.get_flow(input_nc)
@@ -283,21 +284,22 @@ def FPN101():
 
 import torch
 import torchvision
+##################################################################################
+# VGG network definition
+##################################################################################
+from torchvision import models
 
 ###############################################################################
 # Losses
 ######################### ######################################################
 
 
-##################################################################################
-# VGG network definition
-##################################################################################
-from torchvision import models
+
 
 # Source: https://github.com/NVIDIA/pix2pixHD
 class Vgg19(torch.nn.Module):
     def __init__(self, requires_grad=False):
-        super(Vgg19, self).__init__()
+        super().__init__()
         vgg_pretrained_features = models.vgg19(pretrained=True).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
@@ -331,7 +333,7 @@ class Vgg19(torch.nn.Module):
 # Source: https://github.com/NVIDIA/pix2pixHD
 class VGGPerceptualLoss(nn.Module):
     def __init__(self):
-        super(VGGPerceptualLoss, self).__init__()
+        super().__init__()
         self.vgg = Vgg19().cuda().eval()
         self.criterion = nn.L1Loss()
         self.weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
@@ -346,7 +348,7 @@ class VGGPerceptualLoss(nn.Module):
 
 class GANLoss(nn.Module):
     def __init__(self, loss_name="lsgan", target_real_label=1.0, target_fake_label=0.0):
-        super(GANLoss, self).__init__()
+        super().__init__()
         self.register_buffer("real_label", torch.tensor(target_real_label))
         self.register_buffer("fake_label", torch.tensor(target_fake_label))
         self.loss_name = loss_name
@@ -485,9 +487,18 @@ def define_D(opts):
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator(nn.Module):
     def __init__(
-        self, input_nc, ndf, n_layers, norm_layer, use_sigmoid, kw, padw, nf_mult, nf_mult_prev,
+        self,
+        input_nc,
+        ndf,
+        n_layers,
+        norm_layer,
+        use_sigmoid,
+        kw,
+        padw,
+        nf_mult,
+        nf_mult_prev,
     ):
-        super(NLayerDiscriminator, self).__init__()
+        super().__init__()
 
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
@@ -502,7 +513,7 @@ class NLayerDiscriminator(nn.Module):
 
         for n in range(1, n_layers):
             nf_mult_prev = nf_mult
-            nf_mult = min(2 ** n, 8)
+            nf_mult = min(2**n, 8)
             sequence += [
                 # Use spectral normalization
                 SpectralNorm(
@@ -520,7 +531,7 @@ class NLayerDiscriminator(nn.Module):
             ]
 
         nf_mult_prev = nf_mult
-        nf_mult = min(2 ** n_layers, 8)
+        nf_mult = min(2**n_layers, 8)
         sequence += [
             # Use spectral normalization
             SpectralNorm(
@@ -553,7 +564,7 @@ class NLayerDiscriminator(nn.Module):
 
 class SpectralNorm(nn.Module):
     def __init__(self, module, name="weight", power_iterations=1):
-        super(SpectralNorm, self).__init__()
+        super().__init__()
         self.module = module
         self.name = name
         self.power_iterations = power_iterations

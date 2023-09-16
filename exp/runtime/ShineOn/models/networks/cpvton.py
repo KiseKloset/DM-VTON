@@ -1,4 +1,3 @@
-# coding=utf-8
 import os
 
 import numpy as np
@@ -53,21 +52,17 @@ def init_weights(net, init_type="normal"):
     elif init_type == "kaiming":
         net.apply(weights_init_kaiming)
     else:
-        raise NotImplementedError(
-            "initialization method [%s] is not implemented" % init_type
-        )
+        raise NotImplementedError("initialization method [%s] is not implemented" % init_type)
 
 
 class FeatureExtraction(nn.Module):
-    def __init__(
-        self, input_nc, ngf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_dropout=False
-    ):
-        super(FeatureExtraction, self).__init__()
+    def __init__(self, input_nc, ngf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_dropout=False):
+        super().__init__()
         downconv = nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1)
         model = [downconv, nn.ReLU(True), norm_layer(ngf)]
         for i in range(n_layers):
-            in_ngf = 2 ** i * ngf if 2 ** i * ngf < 512 else 512
-            out_ngf = 2 ** (i + 1) * ngf if 2 ** i * ngf < 512 else 512
+            in_ngf = 2**i * ngf if 2**i * ngf < 512 else 512
+            out_ngf = 2 ** (i + 1) * ngf if 2**i * ngf < 512 else 512
             downconv = nn.Conv2d(in_ngf, out_ngf, kernel_size=4, stride=2, padding=1)
             model += [downconv, nn.ReLU(True)]
             model += [norm_layer(out_ngf)]
@@ -90,7 +85,7 @@ class FeatureExtraction(nn.Module):
 
 class FeatureL2Norm(torch.nn.Module):
     def __init__(self):
-        super(FeatureL2Norm, self).__init__()
+        super().__init__()
 
     def forward(self, feature):
         epsilon = 1e-6
@@ -104,7 +99,7 @@ class FeatureL2Norm(torch.nn.Module):
 
 class FeatureCorrelation(nn.Module):
     def __init__(self):
-        super(FeatureCorrelation, self).__init__()
+        super().__init__()
 
     def forward(self, feature_A, feature_B):
         b, c, h, w = feature_A.size()
@@ -113,15 +108,13 @@ class FeatureCorrelation(nn.Module):
         feature_B = feature_B.view(b, c, h * w).transpose(1, 2)
         # perform matrix mult.
         feature_mul = torch.bmm(feature_B, feature_A)
-        correlation_tensor = (
-            feature_mul.view(b, h, w, h * w).transpose(2, 3).transpose(1, 2)
-        )
+        correlation_tensor = feature_mul.view(b, h, w, h * w).transpose(2, 3).transpose(1, 2)
         return correlation_tensor
 
 
 class FeatureRegression(nn.Module):
     def __init__(self, input_nc=512, output_dim=6):
-        super(FeatureRegression, self).__init__()
+        super().__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(input_nc, 512, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(512),
@@ -153,7 +146,7 @@ class FeatureRegression(nn.Module):
 
 class AffineGridGen(nn.Module):
     def __init__(self, out_h=256, out_w=192, out_ch=3):
-        super(AffineGridGen, self).__init__()
+        super().__init__()
         self.out_h = out_h
         self.out_w = out_w
         self.out_ch = out_ch
@@ -166,10 +159,8 @@ class AffineGridGen(nn.Module):
 
 
 class TpsGridGen(nn.Module):
-    def __init__(
-        self, out_h=256, out_w=192, use_regular_grid=True, grid_size=3, reg_factor=0
-    ):
-        super(TpsGridGen, self).__init__()
+    def __init__(self, out_h=256, out_w=192, use_regular_grid=True, grid_size=3, reg_factor=0):
+        super().__init__()
         self.out_h, self.out_w = out_h, out_w
         self.reg_factor = reg_factor
         # self.use_cuda = use_cuda
@@ -177,9 +168,7 @@ class TpsGridGen(nn.Module):
         # create grid in numpy
         self.grid = np.zeros([self.out_h, self.out_w, 3], dtype=np.float32)
         # sampling grid with dim-0 coords (Y)
-        self.grid_X, self.grid_Y = np.meshgrid(
-            np.linspace(-1, 1, out_w), np.linspace(-1, 1, out_h)
-        )
+        self.grid_X, self.grid_Y = np.meshgrid(np.linspace(-1, 1, out_w), np.linspace(-1, 1, out_h))
         # grid_X,grid_Y: size [1,H,W,1,1]
         self.grid_X = torch.FloatTensor(self.grid_X).unsqueeze(0).unsqueeze(3)
         self.grid_Y = torch.FloatTensor(self.grid_Y).unsqueeze(0).unsqueeze(3)
@@ -212,9 +201,7 @@ class TpsGridGen(nn.Module):
         device = theta.device
         self.grid_X = self.grid_X.to(device)
         self.grid_Y = self.grid_Y.to(device)
-        warped_grid = self.apply_transformation(
-            theta, torch.cat((self.grid_X, self.grid_Y), 3)
-        )
+        warped_grid = self.apply_transformation(theta, torch.cat((self.grid_X, self.grid_Y), 3))
 
         return warped_grid.to(device)
 
@@ -226,9 +213,7 @@ class TpsGridGen(nn.Module):
         P_dist_squared = torch.pow(Xmat - Xmat.transpose(0, 1), 2) + torch.pow(
             Ymat - Ymat.transpose(0, 1), 2
         )
-        P_dist_squared[
-            P_dist_squared == 0
-        ] = 1  # make diagonal 1 to avoid NaN in log computation
+        P_dist_squared[P_dist_squared == 0] = 1  # make diagonal 1 to avoid NaN in log computation
         K = torch.mul(P_dist_squared, torch.log(P_dist_squared))
         # construct matrix L
         O = torch.FloatTensor(N, 1).fill_(1)
@@ -272,47 +257,19 @@ class TpsGridGen(nn.Module):
         P_Y = self.P_Y.expand((1, points_h, points_w, 1, self.N))
 
         # compute weigths for non-linear part
-        W_X = torch.bmm(
-            self.Li[:, : self.N, : self.N].expand((batch_size, self.N, self.N)), Q_X
-        )
-        W_Y = torch.bmm(
-            self.Li[:, : self.N, : self.N].expand((batch_size, self.N, self.N)), Q_Y
-        )
+        W_X = torch.bmm(self.Li[:, : self.N, : self.N].expand((batch_size, self.N, self.N)), Q_X)
+        W_Y = torch.bmm(self.Li[:, : self.N, : self.N].expand((batch_size, self.N, self.N)), Q_Y)
         # reshape
         # W_X,W,Y: size [B,H,W,1,N]
-        W_X = (
-            W_X.unsqueeze(3)
-            .unsqueeze(4)
-            .transpose(1, 4)
-            .repeat(1, points_h, points_w, 1, 1)
-        )
-        W_Y = (
-            W_Y.unsqueeze(3)
-            .unsqueeze(4)
-            .transpose(1, 4)
-            .repeat(1, points_h, points_w, 1, 1)
-        )
+        W_X = W_X.unsqueeze(3).unsqueeze(4).transpose(1, 4).repeat(1, points_h, points_w, 1, 1)
+        W_Y = W_Y.unsqueeze(3).unsqueeze(4).transpose(1, 4).repeat(1, points_h, points_w, 1, 1)
         # compute weights for affine part
-        A_X = torch.bmm(
-            self.Li[:, self.N :, : self.N].expand((batch_size, 3, self.N)), Q_X
-        )
-        A_Y = torch.bmm(
-            self.Li[:, self.N :, : self.N].expand((batch_size, 3, self.N)), Q_Y
-        )
+        A_X = torch.bmm(self.Li[:, self.N :, : self.N].expand((batch_size, 3, self.N)), Q_X)
+        A_Y = torch.bmm(self.Li[:, self.N :, : self.N].expand((batch_size, 3, self.N)), Q_Y)
         # reshape
         # A_X,A,Y: size [B,H,W,1,3]
-        A_X = (
-            A_X.unsqueeze(3)
-            .unsqueeze(4)
-            .transpose(1, 4)
-            .repeat(1, points_h, points_w, 1, 1)
-        )
-        A_Y = (
-            A_Y.unsqueeze(3)
-            .unsqueeze(4)
-            .transpose(1, 4)
-            .repeat(1, points_h, points_w, 1, 1)
-        )
+        A_X = A_X.unsqueeze(3).unsqueeze(4).transpose(1, 4).repeat(1, points_h, points_w, 1, 1)
+        A_Y = A_Y.unsqueeze(3).unsqueeze(4).transpose(1, 4).repeat(1, points_h, points_w, 1, 1)
 
         # compute distance P_i - (grid_X,grid_Y)
         # grid is expanded in point dim 4, but not in batch dim 0, as points P_X,P_Y are fixed for all batch
@@ -346,12 +303,8 @@ class TpsGridGen(nn.Module):
         points_X_batch = points[:, :, :, 0].unsqueeze(3)
         points_Y_batch = points[:, :, :, 1].unsqueeze(3)
         if points_b == 1:
-            points_X_batch = points_X_batch.expand(
-                (batch_size,) + points_X_batch.size()[1:]
-            )
-            points_Y_batch = points_Y_batch.expand(
-                (batch_size,) + points_Y_batch.size()[1:]
-            )
+            points_X_batch = points_X_batch.expand((batch_size,) + points_X_batch.size()[1:])
+            points_Y_batch = points_Y_batch.expand((batch_size,) + points_Y_batch.size()[1:])
 
         points_X_prime = (
             A_X[:, :, :, :, 0]
@@ -385,7 +338,7 @@ class UnetGenerator(nn.Module):
         use_dropout=False,
         use_self_attn=False,
     ):
-        super(UnetGenerator, self).__init__()
+        super().__init__()
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(
             ngf * 8,
@@ -437,7 +390,6 @@ class UnetGenerator(nn.Module):
         self.model = unet_block
 
     def forward(self, input):
-
         return self.model(input)
 
 
@@ -457,15 +409,13 @@ class UnetSkipConnectionBlock(nn.Module):
         self_attn=False,
         use_dropout=False,
     ):
-        super(UnetSkipConnectionBlock, self).__init__()
+        super().__init__()
         self.outermost = outermost
         use_bias = norm_layer == nn.InstanceNorm2d
 
         if input_nc is None:
             input_nc = outer_nc
-        downconv = nn.Conv2d(
-            input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias
-        )
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
@@ -530,7 +480,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
 class Vgg19(nn.Module):
     def __init__(self, requires_grad=False):
-        super(Vgg19, self).__init__()
+        super().__init__()
         vgg_pretrained_features = models.vgg19(pretrained=True).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
@@ -563,7 +513,7 @@ class Vgg19(nn.Module):
 
 class VGGLoss(nn.Module):
     def __init__(self, layids=None):
-        super(VGGLoss, self).__init__()
+        super().__init__()
         self.vgg = Vgg19()
         self.vgg.cuda()
         self.criterion = nn.L1Loss()

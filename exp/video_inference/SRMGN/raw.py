@@ -1,13 +1,14 @@
 import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from SRMGN.models.pfafn.afwm_test import AFWM
 from SRMGN.models.mobile_unet_generator import MobileNetV2_unet
+from SRMGN.models.pfafn.afwm_test import AFWM
 from SRMGN.options.test_options import TestOptions
 
 from utils import blending_fn
+
 
 def load_checkpoint(model, checkpoint_path):
     if not os.path.exists(checkpoint_path):
@@ -37,7 +38,6 @@ class SRMGN(nn.Module):
 
         self.prev_mask = None
 
-
     def forward(self, person, cloth, cloth_edge):
         # print("C", person[0][0][100][100], cloth[0][0][100][100], cloth_edge[0][0][100][100])
 
@@ -45,9 +45,18 @@ class SRMGN(nn.Module):
         cloth = cloth * cloth_edge
 
         # Warp
-        warped_cloth, last_flow, = self.warp_model(person, cloth)
+        (
+            warped_cloth,
+            last_flow,
+        ) = self.warp_model(person, cloth)
         # print("D", warped_cloth[0][0][100][100], last_flow[0][0][100][100])
-        warped_edge = F.grid_sample(cloth_edge, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='zeros', align_corners=True)
+        warped_edge = F.grid_sample(
+            cloth_edge,
+            last_flow.permute(0, 2, 3, 1),
+            mode='bilinear',
+            padding_mode='zeros',
+            align_corners=True,
+        )
         # print("E", warped_edge[0][0][100][100])
 
         # Gen
@@ -70,9 +79,9 @@ class SRMGN(nn.Module):
         # TUNGPNT2
         # visualize each module
         # combine = torch.cat([
-        #     person, cloth, cloth_edge.expand(-1, 3, -1, -1), 
+        #     person, cloth, cloth_edge.expand(-1, 3, -1, -1),
         #     warped_cloth, warped_edge.expand(-1, 3, -1, -1),
-        #     p_rendered, m_composite.expand(-1, 3, -1, -1), 
+        #     p_rendered, m_composite.expand(-1, 3, -1, -1),
         #     p_tryon
         # ], -1).squeeze()
 

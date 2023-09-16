@@ -6,9 +6,9 @@ Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-
 import util
 from datasets.tryon_dataset import TryonDataset, parse_num_channels
+
 from models.networks import BaseNetwork
 from models.networks.normalization import get_nonspade_norm_layer
 
@@ -55,9 +55,7 @@ class MultiscaleDiscriminator(BaseNetwork):
         return netD
 
     def downsample(self, input):
-        return F.avg_pool2d(
-            input, kernel_size=3, stride=2, padding=[1, 1], count_include_pad=False
-        )
+        return F.avg_pool2d(input, kernel_size=3, stride=2, padding=[1, 1], count_include_pad=False)
 
     # Returns list of lists of discriminator outputs.
     # The final result is of size opt.num_D x opt.n_layers_D
@@ -81,9 +79,7 @@ class NLayerDiscriminator(BaseNetwork):
         parser.add_argument(
             "--n_layers_D", type=int, default=4, help="# layers in each discriminator"
         )
-        parser.add_argument(
-            "--ndf", type=int, default=64, help="num discriminator features"
-        )
+        parser.add_argument("--ndf", type=int, default=64, help="num discriminator features")
         return parser
 
     def __init__(self, opt, in_channels=None):
@@ -109,11 +105,7 @@ class NLayerDiscriminator(BaseNetwork):
             stride = 1 if n == opt.n_layers_D - 1 else 2
             sequence += [
                 [
-                    norm_layer(
-                        nn.Conv2d(
-                            nf_prev, nf, kernel_size=kw, stride=stride, padding=padw
-                        )
-                    ),
+                    norm_layer(nn.Conv2d(nf_prev, nf, kernel_size=kw, stride=stride, padding=padw)),
                     nn.LeakyReLU(0.2, False),
                 ]
             ]

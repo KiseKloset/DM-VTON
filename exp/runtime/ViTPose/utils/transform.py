@@ -1,11 +1,12 @@
 import math
+
 import cv2
 import munkres
 import numpy as np
 import torch
 
 
-# solution proposed in https://github.com/pytorch/pytorch/issues/229#issuecomment-299424875 
+# solution proposed in https://github.com/pytorch/pytorch/issues/229#issuecomment-299424875
 def flip_tensor(tensor, dim=0):
     """
     flip the tensor on the dimension dim
@@ -17,7 +18,9 @@ def flip_tensor(tensor, dim=0):
 #
 # derived from https://github.com/leoxiaobin/deep-high-resolution-net.pytorch
 def flip_back(output_flipped, matched_parts):
-    assert len(output_flipped.shape) == 4, 'output_flipped has to be [batch_size, num_joints, height, width]'
+    assert (
+        len(output_flipped.shape) == 4
+    ), 'output_flipped has to be [batch_size, num_joints, height, width]'
 
     output_flipped = flip_tensor(output_flipped, dim=-1)
 
@@ -35,15 +38,18 @@ def fliplr_joints(joints, joints_vis, width, matched_parts):
 
     # Change left-right parts
     for pair in matched_parts:
-        joints[pair[0], :], joints[pair[1], :] = \
-            joints[pair[1], :], joints[pair[0], :].copy()
-        joints_vis[pair[0], :], joints_vis[pair[1], :] = \
-            joints_vis[pair[1], :], joints_vis[pair[0], :].copy()
+        joints[pair[0], :], joints[pair[1], :] = joints[pair[1], :], joints[pair[0], :].copy()
+        joints_vis[pair[0], :], joints_vis[pair[1], :] = (
+            joints_vis[pair[1], :],
+            joints_vis[pair[0], :].copy(),
+        )
 
     return joints * joints_vis, joints_vis
 
 
-def get_affine_transform(center, scale, pixel_std, rot, output_size, shift=np.array([0, 0], dtype=np.float32), inv=0):
+def get_affine_transform(
+    center, scale, pixel_std, rot, output_size, shift=np.array([0, 0], dtype=np.float32), inv=0
+):
     if not isinstance(scale, np.ndarray) and not isinstance(scale, list):
         print(scale)
         scale = np.array([scale, scale])
@@ -76,7 +82,7 @@ def get_affine_transform(center, scale, pixel_std, rot, output_size, shift=np.ar
 
 
 def affine_transform(pt, t):
-    new_pt = np.array([pt[0], pt[1], 1.]).T
+    new_pt = np.array([pt[0], pt[1], 1.0]).T
     new_pt = np.dot(t, new_pt)
     return new_pt[:2]
 

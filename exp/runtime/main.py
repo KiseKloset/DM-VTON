@@ -2,15 +2,15 @@ import json
 
 import cupy
 import torch
-from thop import profile as ops_profile
-from tqdm import tqdm
-
 # from ACGPN.raw import ACGPN
 # from WUTON.raw import WUTON
 # from RMGN.raw import RMGN
 # from PFAFN.raw import PFAFN
 # from FlowStyle.raw import FlowStyle
 from SRMGN.raw import SRMGN
+from thop import profile as ops_profile
+from tqdm import tqdm
+
 # from CDGNet.raw import CDGNet
 # from ShineOn.raw import ShineOn
 # from SDAFN.raw import SDAFN

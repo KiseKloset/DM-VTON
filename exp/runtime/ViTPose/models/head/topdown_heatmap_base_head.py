@@ -79,10 +79,10 @@ class TopdownHeatmapBaseHead(nn.Module):
             unbiased=self.test_cfg.get('unbiased_decoding', False),
             post_process=self.test_cfg.get('post_process', 'default'),
             kernel=self.test_cfg.get('modulate_kernel', 11),
-            valid_radius_factor=self.test_cfg.get('valid_radius_factor',
-                                                  0.0546875),
+            valid_radius_factor=self.test_cfg.get('valid_radius_factor', 0.0546875),
             use_udp=self.test_cfg.get('use_udp', False),
-            target_type=self.test_cfg.get('target_type', 'GaussianHeatmap'))
+            target_type=self.test_cfg.get('target_type', 'GaussianHeatmap'),
+        )
 
         all_preds = np.zeros((batch_size, preds.shape[1], 3), dtype=np.float32)
         all_boxes = np.zeros((batch_size, 6), dtype=np.float32)

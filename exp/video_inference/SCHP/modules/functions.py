@@ -1,21 +1,27 @@
 from os import path
+
 import torch
-import torch.distributed as dist
 import torch.autograd as autograd
 import torch.cuda.comm as comm
+import torch.distributed as dist
 from torch.autograd.function import once_differentiable
 from torch.utils.cpp_extension import load
 
 _src_path = path.join(path.dirname(path.abspath(__file__)), "src")
-_backend = load(name="inplace_abn",
-                extra_cflags=["-O3"],
-                sources=[path.join(_src_path, f) for f in [
-                    "inplace_abn.cpp",
-                    "inplace_abn_cpu.cpp",
-                    "inplace_abn_cuda.cu",
-                    "inplace_abn_cuda_half.cu"
-                ]],
-                extra_cuda_cflags=["--expt-extended-lambda"])
+_backend = load(
+    name="inplace_abn",
+    extra_cflags=["-O3"],
+    sources=[
+        path.join(_src_path, f)
+        for f in [
+            "inplace_abn.cpp",
+            "inplace_abn_cpu.cpp",
+            "inplace_abn_cuda.cu",
+            "inplace_abn_cuda_half.cu",
+        ]
+    ],
+    extra_cuda_cflags=["--expt-extended-lambda"],
+)
 
 # Activation names
 ACT_RELU = "relu"
@@ -27,7 +33,7 @@ ACT_NONE = "none"
 def _check(fn, *args, **kwargs):
     success = fn(*args, **kwargs)
     if not success:
-        raise RuntimeError("CUDA Error encountered in {}".format(fn))
+        raise RuntimeError(f"CUDA Error encountered in {fn}")
 
 
 def _broadcast_shape(x):
@@ -76,8 +82,19 @@ def _act_backward(ctx, x, dx):
 
 class InPlaceABN(autograd.Function):
     @staticmethod
-    def forward(ctx, x, weight, bias, running_mean, running_var,
-                training=True, momentum=0.1, eps=1e-05, activation=ACT_LEAKY_RELU, slope=0.01):
+    def forward(
+        ctx,
+        x,
+        weight,
+        bias,
+        running_mean,
+        running_var,
+        training=True,
+        momentum=0.1,
+        eps=1e-05,
+        activation=ACT_LEAKY_RELU,
+        slope=0.01,
+    ):
         # Save context
         ctx.training = training
         ctx.momentum = momentum
@@ -96,8 +113,8 @@ class InPlaceABN(autograd.Function):
             mean, var = _backend.mean_var(x)
 
             # Update running stats
-            running_mean.mul_((1 - ctx.momentum)).add_(ctx.momentum * mean)
-            running_var.mul_((1 - ctx.momentum)).add_(ctx.momentum * var * count / (count - 1))
+            running_mean.mul_(1 - ctx.momentum).add_(ctx.momentum * mean)
+            running_var.mul_(1 - ctx.momentum).add_(ctx.momentum * var * count / (count - 1))
 
             # Mark in-place modified tensors
             ctx.mark_dirty(x, running_mean, running_var)
@@ -143,8 +160,21 @@ class InPlaceABN(autograd.Function):
 
 class InPlaceABNSync(autograd.Function):
     @classmethod
-    def forward(cls, ctx, x, weight, bias, running_mean, running_var,
-                training=True, momentum=0.1, eps=1e-05, activation=ACT_LEAKY_RELU, slope=0.01, equal_batches=True):
+    def forward(
+        cls,
+        ctx,
+        x,
+        weight,
+        bias,
+        running_mean,
+        running_var,
+        training=True,
+        momentum=0.1,
+        eps=1e-05,
+        activation=ACT_LEAKY_RELU,
+        slope=0.01,
+        equal_batches=True,
+    ):
         # Save context
         ctx.training = training
         ctx.momentum = momentum
@@ -184,9 +214,11 @@ class InPlaceABNSync(autograd.Function):
                 var = var_all
 
             # Update running stats
-            running_mean.mul_((1 - ctx.momentum)).add_(ctx.momentum * mean)
+            running_mean.mul_(1 - ctx.momentum).add_(ctx.momentum * mean)
             count = batch_size.item() * x.view(x.shape[0], x.shape[1], -1).shape[-1]
-            running_var.mul_((1 - ctx.momentum)).add_(ctx.momentum * var * (float(count) / (count - 1)))
+            running_var.mul_(1 - ctx.momentum).add_(
+                ctx.momentum * var * (float(count) / (count - 1))
+            )
 
             # Mark in-place modified tensors
             ctx.mark_dirty(x, running_mean, running_var)
