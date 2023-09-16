@@ -4,11 +4,11 @@ default_language_version:
   python: python3.10
 
 # Define bot property if installed via https://github.com/marketplace/pre-commit-ci
-ci:
-  autofix_prs: true
-  autofix_commit_msg: '🎨 [pre-commit.ci] auto fixes from pre-commit hooks'
-  autoupdate_commit_msg: '⬆️ [pre-commit.ci] pre-commit autoupdate'
-  autoupdate_schedule: monthly
+# ci:
+#   autofix_prs: true
+#   autofix_commit_msg: '🎨 [pre-commit.ci] auto fixes from pre-commit hooks'
+#   autoupdate_commit_msg: '⬆️ [pre-commit.ci] pre-commit autoupdate'
+#   autoupdate_schedule: monthly
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
