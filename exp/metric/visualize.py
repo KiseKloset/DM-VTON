@@ -1,18 +1,18 @@
-from PIL import Image
-from pathlib import Path
 import glob
 import random
+from pathlib import Path
 
+from PIL import Image
 
 INPUT = '../dataset/Clean-VITON/VITON_test'
 MODELS = {
     'ACGPN': 'results/ACGPN/tryon',
-    'C_VTON': 'results/C_VTON/tryon', 
+    'C_VTON': 'results/C_VTON/tryon',
     'DAFlow': 'results/DAFlow/tryon',
     # 'RMGN_VITON': 'results/RMGN_VITON/tryon',
     'PF_AFN': 'results/PF_AFN/tryon',
     'FS_VTON': 'results/FS_VTON/tryon',
-    'DMVTON': 'results/DMVTON/tryon'
+    'DMVTON': 'results/DMVTON/tryon',
 }
 SAVE = 'results/visualize'
 Path(SAVE).mkdir(parents=True, exist_ok=True)
@@ -42,42 +42,45 @@ def get_data_paths(dir: str | list[str], data_formats: list, prefix: str = '') -
         return data_files
     except Exception as e:
         raise Exception(f'{prefix}Error loading data from {dir}: {e}') from e
-    
+
 
 def merge_img(imgs, offset=0, axes='hor'):
     widths, heights = zip(*(i.size for i in imgs))
-    if axes=='hor':
+    if axes == 'hor':
         w, h = sum(widths), max(heights)
         new_im = Image.new('RGB', (w, h))
         pos = 0
         for im in imgs:
             new_im.paste(im, (pos, 0))
             pos = pos + im.size[0] + offset
-    elif axes=='ver':
+    elif axes == 'ver':
         w, h = max(widths), sum(heights)
         new_im = Image.new('RGB', (w, h))
         pos = 0
         for i, im in enumerate(imgs):
             new_im.paste(im, (0, pos))
-            pos = pos + im.size[1] + offset  
+            pos = pos + im.size[1] + offset
 
     return new_im
 
+
 # Read pairs
-with open(Path(INPUT) / 'test_pairs.txt', 'r') as f:
+with open(Path(INPUT) / 'test_pairs.txt') as f:
     fs = f.read().strip().split('\n')
     fs = [i.split() for i in fs]
 
 for pair in fs:
-    p, c = Image.open(Path(INPUT) / 'test_img' / pair[0]), Image.open(Path(INPUT) / 'test_color' / pair[1])
+    p, c = Image.open(Path(INPUT) / 'test_img' / pair[0]), Image.open(
+        Path(INPUT) / 'test_color' / pair[1]
+    )
     inputs = merge_img([p, c], axes='hor')
     # inputs = inputs.resize((p.size[0]//2, p.size[1]))
-    
+
     outputs = []
     for method, p in MODELS.items():
         outputs.append(Image.open(Path(p) / pair[0]))
     outputs = merge_img(outputs, axes='hor')
-    
+
     results = merge_img([inputs, outputs], axes='hor')
     results.save(Path(SAVE) / pair[0])
 
@@ -98,4 +101,15 @@ for pair in fs:
 # a = [Path(a).name for a in a]
 # samples = random.sample(a, k=10)
 # print(samples)
-samples = ['019454_0.jpg', '011662_0.jpg', '015428_0.jpg', '007397_0.jpg', '001269_0.jpg', '004981_0.jpg', '019243_0.jpg', '006649_0.jpg', '008598_0.jpg', '014785_0.jpg']
+samples = [
+    '019454_0.jpg',
+    '011662_0.jpg',
+    '015428_0.jpg',
+    '007397_0.jpg',
+    '001269_0.jpg',
+    '004981_0.jpg',
+    '019243_0.jpg',
+    '006649_0.jpg',
+    '008598_0.jpg',
+    '014785_0.jpg',
+]

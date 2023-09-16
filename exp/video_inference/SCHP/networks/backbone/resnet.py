@@ -1,22 +1,21 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
 
 """
 @Author  :   Peike Li
 @Contact :   peike.li@yahoo.com
 @File    :   resnet.py
 @Time    :   8/4/19 3:35 PM
-@Desc    :   
-@License :   This source code is licensed under the license found in the 
+@Desc    :
+@License :   This source code is licensed under the license found in the
              LICENSE file in the root directory of this source tree.
 """
 
 import functools
-import torch.nn as nn
 import math
-from torch.utils.model_zoo import load_url
 
+import torch.nn as nn
 from modules import InPlaceABNSync
+from torch.utils.model_zoo import load_url
 
 BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
 
@@ -25,21 +24,20 @@ __all__ = ['ResNet', 'resnet18', 'resnet50', 'resnet101']  # resnet101 is coming
 model_urls = {
     'resnet18': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnet18-imagenet.pth',
     'resnet50': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnet50-imagenet.pth',
-    'resnet101': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnet101-imagenet.pth'
+    'resnet101': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnet101-imagenet.pth',
 }
 
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
 class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(BasicBlock, self).__init__()
+        super().__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -71,11 +69,10 @@ class Bottleneck(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(Bottleneck, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn2 = BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = BatchNorm2d(planes * 4)
@@ -107,10 +104,9 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-
     def __init__(self, block, layers, num_classes=1000):
         self.inplanes = 128
-        super(ResNet, self).__init__()
+        super().__init__()
         self.conv1 = conv3x3(3, 64, stride=2)
         self.bn1 = BatchNorm2d(64)
         self.relu1 = nn.ReLU(inplace=True)
@@ -132,7 +128,7 @@ class ResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -141,8 +137,13 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(
+                    self.inplanes,
+                    planes * block.expansion,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
                 BatchNorm2d(planes * block.expansion),
             )
 

@@ -23,7 +23,7 @@ def get_nonspade_norm_layer(opt, norm_type='instance'):
         nonlocal norm_type
         if norm_type.startswith('spectral'):
             layer = spectral_norm(layer)
-            subnorm_type = norm_type[len('spectral'):]
+            subnorm_type = norm_type[len('spectral') :]
 
         if subnorm_type == 'none' or len(subnorm_type) == 0:
             return layer
@@ -46,4 +46,3 @@ def get_nonspade_norm_layer(opt, norm_type='instance'):
         return nn.Sequential(layer, norm_layer)
 
     return add_norm_layer
-

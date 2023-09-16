@@ -2,7 +2,6 @@ import os
 
 import torch
 
-
 # def select_device(device='', batch_size=0):
 #     # device = None or 'cpu' or 0 or '0' or '0,1,2,3'
 #     device = str(device).strip().lower().replace('cuda:', '').replace('none', '')  # to string, 'cuda:0' to '0'
@@ -55,7 +54,9 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9):
     params = [p for p in model.parameters()]
 
     if name == 'Adam':
-        optimizer = torch.optim.Adam(params, lr=lr, betas=(momentum, 0.999))  # adjust beta1 to momentum
+        optimizer = torch.optim.Adam(
+            params, lr=lr, betas=(momentum, 0.999)
+        )  # adjust beta1 to momentum
     elif name == 'AdamW':
         optimizer = torch.optim.AdamW(params, lr=lr, betas=(momentum, 0.999), weight_decay=0.0)
     elif name == 'RMSProp':
@@ -71,7 +72,7 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9):
 def smart_resume(ckpt, optimizer, ckpt_path, epoch_num):
     # Resume training from a partially trained checkpoint
     best_fid = float('inf')
-    start_epoch = ckpt.get('epoch') + 1 if  ckpt.get('epoch') else 1
+    start_epoch = ckpt.get('epoch') + 1 if ckpt.get('epoch') else 1
     if ckpt.get('optimizer') is not None:
         optimizer.load_state_dict(ckpt['optimizer'])  # optimizer
         if ckpt.get('best_fid') is not None:
@@ -79,4 +80,3 @@ def smart_resume(ckpt, optimizer, ckpt_path, epoch_num):
     print(f'Resume training from {ckpt_path} from epoch {start_epoch} to {epoch_num} total epochs')
 
     return start_epoch, best_fid
-

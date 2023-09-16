@@ -7,4 +7,4 @@ python test.py \
 --gen_checkpoint checkpoints/PFAFN/gen_model_final.pth
 
 # pid
-python -m pytorch_fid ../../dataset/Flow-Style-VTON/VITON_test/test_img results/test_pfafn_1/tryon 
+python -m pytorch_fid ../../dataset/Flow-Style-VTON/VITON_test/test_img results/test_pfafn_1/tryon

@@ -5,7 +5,7 @@ from torchvision import models
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_features=64, norm_layer=nn.BatchNorm2d):
-        super(ResidualBlock, self).__init__()
+        super().__init__()
         self.relu = nn.ReLU(True)
         if norm_layer == None:
             self.block = nn.Sequential(
@@ -19,7 +19,7 @@ class ResidualBlock(nn.Module):
                 norm_layer(in_features),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(in_features, in_features, 3, 1, 1, bias=False),
-                norm_layer(in_features)
+                norm_layer(in_features),
             )
 
     def forward(self, x):
@@ -31,19 +31,42 @@ class ResidualBlock(nn.Module):
 
 
 class ResUnetGenerator(nn.Module):
-    def __init__(self, input_nc, output_nc, num_downs, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(ResUnetGenerator, self).__init__()
+    def __init__(
+        self, input_nc, output_nc, num_downs, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False
+    ):
+        super().__init__()
 
         # construct unet structure
-        unet_block = ResUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
+        unet_block = ResUnetSkipConnectionBlock(
+            ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True
+        )
 
         for i in range(num_downs - 5):
-            unet_block = ResUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
-        unet_block = ResUnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-        unet_block = ResUnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-        unet_block = ResUnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-        unet_block = ResUnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
+            unet_block = ResUnetSkipConnectionBlock(
+                ngf * 8,
+                ngf * 8,
+                input_nc=None,
+                submodule=unet_block,
+                norm_layer=norm_layer,
+                use_dropout=use_dropout,
+            )
+        unet_block = ResUnetSkipConnectionBlock(
+            ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer
+        )
+        unet_block = ResUnetSkipConnectionBlock(
+            ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer
+        )
+        unet_block = ResUnetSkipConnectionBlock(
+            ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer
+        )
+        unet_block = ResUnetSkipConnectionBlock(
+            output_nc,
+            ngf,
+            input_nc=input_nc,
+            submodule=unet_block,
+            outermost=True,
+            norm_layer=norm_layer,
+        )
 
         self.model = unet_block
         # self.old_lr = opt.lr
@@ -57,16 +80,24 @@ class ResUnetGenerator(nn.Module):
 # X -------------------identity---------------------- X
 #   |-- downsampling -- |submodule| -- upsampling --|
 class ResUnetSkipConnectionBlock(nn.Module):
-    def __init__(self, outer_nc, inner_nc, input_nc=None,
-                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(ResUnetSkipConnectionBlock, self).__init__()
+    def __init__(
+        self,
+        outer_nc,
+        inner_nc,
+        input_nc=None,
+        submodule=None,
+        outermost=False,
+        innermost=False,
+        norm_layer=nn.BatchNorm2d,
+        use_dropout=False,
+    ):
+        super().__init__()
         self.outermost = outermost
         use_bias = norm_layer == nn.InstanceNorm2d
 
         if input_nc is None:
             input_nc = outer_nc
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=3,
-                             stride=2, padding=1, bias=use_bias)
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=3, stride=2, padding=1, bias=use_bias)
         # add two resblock
         res_downconv = [ResidualBlock(inner_nc, norm_layer), ResidualBlock(inner_nc, norm_layer)]
         res_upconv = [ResidualBlock(outer_nc, norm_layer), ResidualBlock(outer_nc, norm_layer)]
@@ -79,13 +110,17 @@ class ResUnetSkipConnectionBlock(nn.Module):
 
         if outermost:
             upsample = nn.Upsample(scale_factor=2, mode='nearest')
-            upconv = nn.Conv2d(inner_nc * 2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)
+            upconv = nn.Conv2d(
+                inner_nc * 2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias
+            )
             down = [downconv, downrelu] + res_downconv
             up = [upsample, upconv]
             model = down + [submodule] + up
         elif innermost:
             upsample = nn.Upsample(scale_factor=2, mode='nearest')
-            upconv = nn.Conv2d(inner_nc, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)
+            upconv = nn.Conv2d(
+                inner_nc, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias
+            )
             down = [downconv, downrelu] + res_downconv
             if norm_layer == None:
                 up = [upsample, upconv, uprelu] + res_upconv
@@ -94,7 +129,9 @@ class ResUnetSkipConnectionBlock(nn.Module):
             model = down + up
         else:
             upsample = nn.Upsample(scale_factor=2, mode='nearest')
-            upconv = nn.Conv2d(inner_nc*2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)
+            upconv = nn.Conv2d(
+                inner_nc * 2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias
+            )
             if norm_layer == None:
                 down = [downconv, downrelu] + res_downconv
                 up = [upsample, upconv, uprelu] + res_upconv
@@ -118,6 +155,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
 
 if __name__ == "__main__":
     import time
+
     device = torch.device("cuda:1")
     net = ResUnetGenerator(7, 4, 5).to(device)
     net.eval()

@@ -188,7 +188,7 @@ std::vector<at::Tensor> edz_eydz_cuda_h(at::Tensor z, at::Tensor dz, at::Tensor 
         edz.data<float>(),
         eydz.data<float>(),
         affine, eps, num, chn, sp);
- 
+
   return {edz, eydz};
 }
 

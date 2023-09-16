@@ -4,12 +4,12 @@
 # Written by Bin Xiao (Bin.Xiao@microsoft.com)
 # ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
+
 cimport numpy as np
+
 
 cdef inline np.float32_t max(np.float32_t a, np.float32_t b):
     return a if a >= b else b

@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
-from .. import constant_init, normal_init
-
-from .. import pose_pck_accuracy, flip_back, resize
 import torch.nn.functional as F
+
+from .. import constant_init, flip_back, normal_init, pose_pck_accuracy, resize
 from .topdown_heatmap_base_head import TopdownHeatmapBaseHead
 
 
@@ -40,20 +39,22 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
         loss_keypoint (dict): Config for keypoint loss. Default: None.
     """
 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_deconv_layers=3,
-                 num_deconv_filters=(256, 256, 256),
-                 num_deconv_kernels=(4, 4, 4),
-                 extra=None,
-                 in_index=0,
-                 input_transform=None,
-                 align_corners=False,
-                 loss_keypoint=None,
-                 train_cfg=None,
-                 test_cfg=None,
-                 upsample=0,):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        num_deconv_layers=3,
+        num_deconv_filters=(256, 256, 256),
+        num_deconv_kernels=(4, 4, 4),
+        extra=None,
+        in_index=0,
+        input_transform=None,
+        align_corners=False,
+        loss_keypoint=None,
+        train_cfg=None,
+        test_cfg=None,
+        upsample=0,
+    ):
         super().__init__()
 
         self.in_channels = in_channels
@@ -80,8 +81,7 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
         elif num_deconv_layers == 0:
             self.deconv_layers = nn.Identity()
         else:
-            raise ValueError(
-                f'num_deconv_layers ({num_deconv_layers}) should >= 0.')
+            raise ValueError(f'num_deconv_layers ({num_deconv_layers}) should >= 0.')
 
         identity_final_layer = False
         if extra is not None and 'final_conv_kernel' in extra:
@@ -101,33 +101,35 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
         if identity_final_layer:
             self.final_layer = nn.Identity()
         else:
-            conv_channels = num_deconv_filters[
-                -1] if num_deconv_layers > 0 else self.in_channels
+            conv_channels = num_deconv_filters[-1] if num_deconv_layers > 0 else self.in_channels
 
             layers = []
             if extra is not None:
                 num_conv_layers = extra.get('num_conv_layers', 0)
-                num_conv_kernels = extra.get('num_conv_kernels',
-                                             [1] * num_conv_layers)
+                num_conv_kernels = extra.get('num_conv_kernels', [1] * num_conv_layers)
 
                 for i in range(num_conv_layers):
                     layers.append(
-                        nn.Conv2d(in_channels=conv_channels,
-                                  out_channels=conv_channels,
-                                  kernel_size=num_conv_kernels[i],
-                                  stride=1,
-                                  padding=(num_conv_kernels[i] - 1) // 2)
+                        nn.Conv2d(
+                            in_channels=conv_channels,
+                            out_channels=conv_channels,
+                            kernel_size=num_conv_kernels[i],
+                            stride=1,
+                            padding=(num_conv_kernels[i] - 1) // 2,
                         )
+                    )
                     layers.append(nn.BatchNorm2d(conv_channels))
                     layers.append(nn.ReLU(inplace=True))
 
             layers.append(
-                nn.Conv2d(in_channels=conv_channels,
-                          out_channels=out_channels,
-                          kernel_size=kernel_size,
-                          stride=1,
-                          padding=padding)
+                nn.Conv2d(
+                    in_channels=conv_channels,
+                    out_channels=out_channels,
+                    kernel_size=kernel_size,
+                    stride=1,
+                    padding=padding,
                 )
+            )
 
             if len(layers) > 1:
                 self.final_layer = nn.Sequential(*layers)
@@ -180,7 +182,8 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
             _, avg_acc, _ = pose_pck_accuracy(
                 output.detach().cpu().numpy(),
                 target.detach().cpu().numpy(),
-                target_weight.detach().cpu().numpy().squeeze(-1) > 0)
+                target_weight.detach().cpu().numpy().squeeze(-1) > 0,
+            )
             accuracy['acc_pose'] = float(avg_acc)
 
         return accuracy
@@ -207,9 +210,8 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
 
         if flip_pairs is not None:
             output_heatmap = flip_back(
-                output.detach().cpu().numpy(),
-                flip_pairs,
-                target_type=self.target_type)
+                output.detach().cpu().numpy(), flip_pairs, target_type=self.target_type
+            )
             # feature is not aligned, shift flipped heatmap for higher accuracy
             if self.test_cfg.get('shift_heatmap', False):
                 output_heatmap[:, :, :, 1:] = output_heatmap[:, :, :, :-1]
@@ -273,8 +275,8 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
                         input=F.relu(inputs),
                         scale_factor=self.upsample,
                         mode='bilinear',
-                        align_corners=self.align_corners
-                        )
+                        align_corners=self.align_corners,
+                    )
             return inputs
 
         if self.input_transform == 'resize_concat':
@@ -284,7 +286,9 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
                     input=x,
                     size=inputs[0].shape[2:],
                     mode='bilinear',
-                    align_corners=self.align_corners) for x in inputs
+                    align_corners=self.align_corners,
+                )
+                for x in inputs
             ]
             inputs = torch.cat(upsampled_inputs, dim=1)
         elif self.input_transform == 'multiple_select':
@@ -297,29 +301,28 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
     def _make_deconv_layer(self, num_layers, num_filters, num_kernels):
         """Make deconv layers."""
         if num_layers != len(num_filters):
-            error_msg = f'num_layers({num_layers}) ' \
-                        f'!= length of num_filters({len(num_filters)})'
+            error_msg = f'num_layers({num_layers}) ' f'!= length of num_filters({len(num_filters)})'
             raise ValueError(error_msg)
         if num_layers != len(num_kernels):
-            error_msg = f'num_layers({num_layers}) ' \
-                        f'!= length of num_kernels({len(num_kernels)})'
+            error_msg = f'num_layers({num_layers}) ' f'!= length of num_kernels({len(num_kernels)})'
             raise ValueError(error_msg)
 
         layers = []
         for i in range(num_layers):
-            kernel, padding, output_padding = \
-                self._get_deconv_cfg(num_kernels[i])
+            kernel, padding, output_padding = self._get_deconv_cfg(num_kernels[i])
 
             planes = num_filters[i]
             layers.append(
-                nn.ConvTranspose2d(in_channels=self.in_channels,
-                                   out_channels=planes,
-                                   kernel_size=kernel,
-                                   stride=2,
-                                   padding=padding,
-                                   output_padding=output_padding,
-                                   bias=False)
+                nn.ConvTranspose2d(
+                    in_channels=self.in_channels,
+                    out_channels=planes,
+                    kernel_size=kernel,
+                    stride=2,
+                    padding=padding,
+                    output_padding=output_padding,
+                    bias=False,
                 )
+            )
             layers.append(nn.BatchNorm2d(planes))
             layers.append(nn.ReLU(inplace=True))
             self.in_channels = planes

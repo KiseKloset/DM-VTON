@@ -9,16 +9,16 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import cupy
-import torch.nn as nn
-import torchvision as tv
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
+import torchvision as tv
+from options.test_options import TestOptions
 from torch.utils.data import DataLoader
 
-from options.test_options import TestOptions
-from .models.networks import ResUnetGenerator, load_checkpoint
-from .models.afwm import AFWM
 from .data.viton_dataset import LoadVITONDataset
+from .models.afwm import AFWM
+from .models.networks import ResUnetGenerator, load_checkpoint
 
 
 def run_test(dataroot, save_dir, batch_size, device):
@@ -51,13 +51,21 @@ def run_test(dataroot, save_dir, batch_size, device):
             ##edge is extracted from the clothes image with the built-in function in python
             edge = data['edge'].to(device)
             edge = (edge > 0.5).float()
-            clothes = clothes * edge        
+            clothes = clothes * edge
 
             with cupy.cuda.Device(int(device.split(':')[-1])):
                 flow_out = warp_model(real_image.to(device), clothes.to(device))
-            warped_cloth, last_flow, = flow_out
-            warped_edge = F.grid_sample(edge.to(device), last_flow.permute(0, 2, 3, 1),
-                                mode='bilinear', padding_mode='zeros', align_corners=True)
+            (
+                warped_cloth,
+                last_flow,
+            ) = flow_out
+            warped_edge = F.grid_sample(
+                edge.to(device),
+                last_flow.permute(0, 2, 3, 1),
+                mode='bilinear',
+                padding_mode='zeros',
+                align_corners=True,
+            )
 
             gen_inputs = torch.cat([real_image.to(device), warped_cloth, warped_edge], 1)
             gen_outputs = gen_model(gen_inputs)
@@ -75,5 +83,5 @@ def run_test(dataroot, save_dir, batch_size, device):
                     tryon_dir / p_name,
                     nrow=int(1),
                     normalize=True,
-                    value_range=(-1,1),
+                    value_range=(-1, 1),
                 )

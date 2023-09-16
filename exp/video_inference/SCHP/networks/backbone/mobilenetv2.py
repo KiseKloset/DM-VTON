@@ -1,20 +1,19 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
 
 """
 @Author  :   Peike Li
 @Contact :   peike.li@yahoo.com
 @File    :   mobilenetv2.py
 @Time    :   8/4/19 3:35 PM
-@Desc    :   
-@License :   This source code is licensed under the license found in the 
+@Desc    :
+@License :   This source code is licensed under the license found in the
              LICENSE file in the root directory of this source tree.
 """
 
-import torch.nn as nn
-import math
 import functools
+import math
 
+import torch.nn as nn
 from modules import InPlaceABN, InPlaceABNSync
 
 BatchNorm2d = functools.partial(InPlaceABNSync, activation='none')
@@ -24,23 +23,19 @@ __all__ = ['mobilenetv2']
 
 def conv_bn(inp, oup, stride):
     return nn.Sequential(
-        nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
-        BatchNorm2d(oup),
-        nn.ReLU6(inplace=True)
+        nn.Conv2d(inp, oup, 3, stride, 1, bias=False), BatchNorm2d(oup), nn.ReLU6(inplace=True)
     )
 
 
 def conv_1x1_bn(inp, oup):
     return nn.Sequential(
-        nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
-        BatchNorm2d(oup),
-        nn.ReLU6(inplace=True)
+        nn.Conv2d(inp, oup, 1, 1, 0, bias=False), BatchNorm2d(oup), nn.ReLU6(inplace=True)
     )
 
 
 class InvertedResidual(nn.Module):
     def __init__(self, inp, oup, stride, expand_ratio):
-        super(InvertedResidual, self).__init__()
+        super().__init__()
         self.stride = stride
         assert stride in [1, 2]
 
@@ -80,8 +75,8 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self, n_class=1000, input_size=224, width_mult=1.):
-        super(MobileNetV2, self).__init__()
+    def __init__(self, n_class=1000, input_size=224, width_mult=1.0):
+        super().__init__()
         block = InvertedResidual
         input_channel = 32
         last_channel = 1280
@@ -133,7 +128,7 @@ class MobileNetV2(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
                 if m.bias is not None:
                     m.bias.data.zero_()
             elif isinstance(m, BatchNorm2d):

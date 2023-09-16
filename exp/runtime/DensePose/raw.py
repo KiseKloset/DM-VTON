@@ -1,9 +1,7 @@
 import torch.nn as nn
-
+from densepose import add_densepose_config
 from detectron2.config import get_cfg
 from detectron2.modeling import build_model
-
-from densepose import add_densepose_config
 
 
 class DensePose(nn.Module):

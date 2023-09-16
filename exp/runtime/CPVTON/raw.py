@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from .networks import GMM, UnetGenerator
 
+
 class CPVTON(nn.Module):
     def __init__(self, device):
         super().__init__()
@@ -13,4 +14,3 @@ class CPVTON(nn.Module):
         output1 = self.warp(inputA, inputB)
         output2 = torch.cat((inputA, inputB), dim=1)
         return self.gen(output2)
-    

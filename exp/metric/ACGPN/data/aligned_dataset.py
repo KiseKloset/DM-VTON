@@ -1,13 +1,13 @@
+import json
 import os.path
+import os.path as osp
 from pathlib import Path
+
+import numpy as np
+import torch
 from data.base_dataset import BaseDataset, get_params, get_transform, normalize
 from data.image_folder import make_dataset, make_dataset_test
-from PIL import Image
-import torch
-import json
-import numpy as np
-import os.path as osp
-from PIL import ImageDraw
+from PIL import Image, ImageDraw
 
 
 class AlignedDataset(BaseDataset):
@@ -23,8 +23,8 @@ class AlignedDataset(BaseDataset):
         # load data list from pairs file
         human_names = []
         cloth_names = []
-        i=0
-        with open(os.path.join(opt.dataroot, opt.datapairs), 'r') as f:
+        i = 0
+        with open(os.path.join(opt.dataroot, opt.datapairs)) as f:
             for line in f.readlines():
                 h_name, c_name = line.strip().split()
                 human_names.append(h_name)
@@ -96,7 +96,7 @@ class AlignedDataset(BaseDataset):
             name = name.split('-')[0]
 
             # print(name)
-            for k, d in enumerate(dirs[max(k-20, 0):k+20]):
+            for k, d in enumerate(dirs[max(k - 20, 0) : k + 20]):
                 if name in d:
                     if name not in self.diction.keys():
                         self.diction[name] = []
@@ -131,8 +131,7 @@ class AlignedDataset(BaseDataset):
             transform_A = get_transform(self.opt, params)
             A_tensor = transform_A(A.convert('RGB'))
         else:
-            transform_A = get_transform(
-                self.opt, params, method=Image.NEAREST, normalize=False)
+            transform_A = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
             A_tensor = transform_A(A) * 255.0
 
         B_tensor = inst_tensor = feat_tensor = 0
@@ -174,9 +173,8 @@ class AlignedDataset(BaseDataset):
         E_tensor = transform_A(E)
 
         # Pose
-        pose_name = B_path.replace('.jpg', '_keypoints.json').replace(
-            'test_img', 'test_pose')
-        with open(osp.join(pose_name), 'r') as f:
+        pose_name = B_path.replace('.jpg', '_keypoints.json').replace('test_img', 'test_pose')
+        with open(osp.join(pose_name)) as f:
             pose_label = json.load(f)
             pose_data = pose_label['people'][0]['pose_keypoints']
             pose_data = np.array(pose_data)
@@ -193,18 +191,25 @@ class AlignedDataset(BaseDataset):
             pointx = pose_data[i, 0]
             pointy = pose_data[i, 1]
             if pointx > 1 and pointy > 1:
-                draw.rectangle((pointx-r, pointy-r, pointx +
-                                r, pointy+r), 'white', 'white')
+                draw.rectangle((pointx - r, pointy - r, pointx + r, pointy + r), 'white', 'white')
                 pose_draw.rectangle(
-                    (pointx-r, pointy-r, pointx+r, pointy+r), 'white', 'white')
+                    (pointx - r, pointy - r, pointx + r, pointy + r), 'white', 'white'
+                )
             one_map = transform_B(one_map.convert('RGB'))
             pose_map[i] = one_map[0]
         P_tensor = pose_map
 
-        input_dict = {'label': A_tensor, 'image': B_tensor,
-                      'path': A_path, 'name': h_name,
-                      'edge': E_tensor, 'color': C_tensor, 'mask': M_tensor, 'colormask': MC_tensor, 'pose': P_tensor
-                      }
+        input_dict = {
+            'label': A_tensor,
+            'image': B_tensor,
+            'path': A_path,
+            'name': h_name,
+            'edge': E_tensor,
+            'color': C_tensor,
+            'mask': M_tensor,
+            'colormask': MC_tensor,
+            'pose': P_tensor,
+        }
 
         return input_dict
 

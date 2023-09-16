@@ -9,16 +9,14 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dataloader.viton_dataset import LoadVITONDataset
-from pipelines import DMVTONPipeline
 from opt.test_opt import TestOptions
+from pipelines import DMVTONPipeline
 from utils.general import Profile, print_log, warm_up
 from utils.metrics import calculate_fid_given_paths, calculate_lpips_given_paths
 from utils.torch_utils import select_device
 
 
-def run_test_pf(
-    pipeline, data_loader, device, img_dir, save_dir, log_path, save_img=True
-):
+def run_test_pf(pipeline, data_loader, device, img_dir, save_dir, log_path, save_img=True):
     metrics = {}
 
     result_dir = Path(save_dir) / 'results'
@@ -90,16 +88,15 @@ def run_test_pf(
     metrics['fps'] = 1000 / t
     print_log(
         log_path,
-        f'Speed: %.1fms per image {real_image.size()}'
-        % t,
+        f'Speed: %.1fms per image {real_image.size()}' % t,
     )
 
     # Memory
-    mem_params = sum([param.nelement()*param.element_size() for param in pipeline.parameters()])
-    mem_bufs = sum([buf.nelement()*buf.element_size() for buf in pipeline.buffers()])
-    metrics['mem'] = mem_params + mem_bufs # in bytes
+    mem_params = sum([param.nelement() * param.element_size() for param in pipeline.parameters()])
+    mem_bufs = sum([buf.nelement() * buf.element_size() for buf in pipeline.buffers()])
+    metrics['mem'] = mem_params + mem_bufs  # in bytes
 
-    ops, params = ops_profile(pipeline, (*dummy_input.values(), ), verbose=False)
+    ops, params = ops_profile(pipeline, (*dummy_input.values(),), verbose=False)
     metrics['ops'] = ops
     metrics['params'] = params
 
