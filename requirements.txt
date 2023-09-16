@@ -6,6 +6,7 @@ cupy-cuda11x>=11.0.0
 # Monitor/Metric
 tensorboardX>=2.6
 tqdm>=4.65.0
+scipy==1.11.1
 thop==0.1.1.post2209072238
 
 # Other
