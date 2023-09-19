@@ -86,6 +86,7 @@ A full list of trainning settings can be found in [`opt/train_opt.py`](./opt/tra
 - `save_period`: Frequency of saving checkpoints after `save_period`
  epochs.
 - `resume`: Use if you want to continue training from a previous process.
+- `project` and `name`: The results (checkpoints, logs, images, etc.) will be saved in the `project/name` folder. *Note that if the folder already exists, the code will create a new folder (e.g. `project/name-1`, `project/name-2`).`*
 
 ## <div align="center"> 📈 Result </div>
 <div align="center">
